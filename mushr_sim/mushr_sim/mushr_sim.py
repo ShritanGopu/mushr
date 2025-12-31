@@ -5,10 +5,11 @@ from __future__ import absolute_import, division, print_function
 from threading import Lock
 
 import numpy as np
-import rospy
+import rclpy
+from rclpy.node import Node
 import tf2_ros
 from geometry_msgs.msg import PoseStamped
-from mushr_base import utils
+# from mushr_base import utils
 from mushr_sim.fake_urg import FakeURG
 from mushr_base.motion_model import KinematicCarMotionModel
 from mushr_sim.srv import CarPose
@@ -18,15 +19,16 @@ from nav_msgs.srv import GetMap
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float64
 from vesc_msgs.msg import VescStateStamped
+import utils
 
-
-class SimulatedCar:
+class SimulatedCar(Node):
     """
     Publishes joint and tf information about the racecar
     """
 
     def __init__(self, car_name, x, y, theta, map_info=None, permissible_region=None, speed_to_erpm_offset=None,
                  speed_to_erpm_gain=None, motion_model=None, sensor_model=None, tf_prefix=None):
+        super().__init__("simulated_car_{}".format(car_name))
         self.car_name = car_name
         self.tf_prefix = tf_prefix
         if self.tf_prefix is None:
@@ -70,26 +72,20 @@ class SimulatedCar:
 
         self.fake_laser = sensor_model
         # Publishes joint values
-        self.state_pub = rospy.Publisher("~{}/car_pose".format(car_name), PoseStamped, queue_size=1)
-
-        self.odom_pub = rospy.Publisher("~{}/odom".format(car_name), Odometry, queue_size=1)
+        self.state_pub = self.create_publisher(PoseStamped, f"/{car_name}/car_pose", 1)
+        self.odom_pub = self.create_publisher(Odometry, f"/{car_name}/odom", 1)
 
         # Publishes joint values
-        self.cur_joints_pub = rospy.Publisher("~{}/joint_states".format(car_name), JointState, queue_size=1)
+        self.cur_joints_pub = self.create_publisher(JointState, f"/{car_name}/joint_states", 1)
 
         # Subscribes to the initial pose of the car
-        self.init_pose_sub = rospy.Subscriber("~reposition", PoseStamped, self.init_pose_cb, queue_size=1)
+        self.init_pose_sub = self.create_subscription(PoseStamped, "/reposition", self.init_pose_cb, 1)
 
         # Subscribes to info about the bldc (particularly the speed in rpm)
-        self.speed_sub = rospy.Subscriber(
-            "/{}/vesc/sensors/core".format(car_name), VescStateStamped, self.speed_cb,
-            queue_size=1
-        )
+        self.speed_sub = self.create_subscription(VescStateStamped, f"/{car_name}/vesc/sensors/core", self.speed_cb, 1)
+        
         # Subscribes to the position of the servo arm
-        self.servo_sub = rospy.Subscriber(
-            "/{}/vesc/sensors/servo_position_command".format(car_name), Float64, self.servo_cb,
-            queue_size=1
-        )
+        self.servo_sub = self.create_subscription(Float64, f"/{car_name}/vesc/sensors/servo_position_command", self.servo_cb, 1)
         self.motion_model = motion_model
 
     def init_pose_cb(self, msg):
@@ -111,7 +107,7 @@ class SimulatedCar:
             # Update the pose of the car if either bounds checking is not enabled,
             # or bounds checking is enabled but the car is in-bounds
             if not check_position_in_bounds(map_rx_pose[0], map_rx_pose[1], self.permissible_region):
-                rospy.logwarn("Requested reposition into obstacle. Ignoring.")
+                self.get_logger().warn("Requested reposition into obstacle. Ignoring.")
                 return
 
         with self.odom_to_base_lock:
@@ -125,9 +121,7 @@ class SimulatedCar:
           msg: vesc_msgs/VescStateStamped message containing the speed of the car (rpm)
         """
         self.last_speed_lock.acquire()
-        self.last_speed = (
-                                  msg.state.speed - self.speed_to_erpm_offset
-                          ) / self.speed_to_erpm_gain
+        self.last_speed = (msg.state.speed - self.speed_to_erpm_offset) / self.speed_to_erpm_gain
         self.last_speed_lock.release()
 
     def servo_cb(self, msg):
@@ -136,8 +130,7 @@ class SimulatedCar:
          msg: std_msgs/Float64 message containing the servo value
         """
         with self.last_steering_angle_lock:
-            self.last_steering_angle = (
-                                               msg.data - self.motion_model.steering_to_servo_offset) / self.motion_model.steering_to_servo_gain
+            self.last_steering_angle = (msg.data - self.motion_model.steering_to_servo_offset) / self.motion_model.steering_to_servo_gain
 
     def reposition(self, x, y, theta):
         rx_trans = np.array(
@@ -153,7 +146,7 @@ class SimulatedCar:
             # Update the pose of the car if either bounds checking is not enabled,
             # or bounds checking is enabled but the car is in-bounds
             if not check_position_in_bounds(map_rx_pose[0], map_rx_pose[1], self.permissible_region):
-                rospy.logwarn("Requested reposition into obstacle. Ignoring.")
+                self.get_logger().warn("Requested reposition into obstacle. Ignoring.")
                 return
 
         with self.odom_to_base_lock:
@@ -228,10 +221,10 @@ class SimulatedCar:
                 for i in range(len(self.joint_msg.position)):
                     self.joint_msg.position[i] = wrap_angle(self.joint_msg.position[i])
             else:
-                rospy.logwarn_throttle(1, "Not in bounds")
+                self.get_logger().warn("Not in bounds")
 
             # Publish the joint states
-            self.joint_msg.header.stamp = now
+            self.joint_msg.header.stamp = now.to_msg()
             self.cur_joints_pub.publish(self.joint_msg)
 
             t = utils.make_transform_msg(self.odom_to_base_trans, self.odom_to_base_rot,
@@ -249,7 +242,12 @@ class SimulatedCar:
     def publish_updated_transforms(self, transform, changes):
         cur_pose = PoseStamped()
         cur_pose.header.frame_id = "map"
-        cur_pose.header.stamp = transform.header.stamp - rospy.Duration(.5) # for visualization purposes, delay header stamp
+
+        t = rclpy.time.Time.from_msg(transform.header.stamp)
+        t = t - rclpy.duration.Duration(seconds=0.5)
+        cur_pose.header.stamp = t.to_msg()
+
+        # for visualization purposes, delay header stamp
         cur_pose.pose.position.x = (
                 self.odom_to_base_trans[0] + self.map_to_odom_trans[0]
         )
@@ -264,7 +262,9 @@ class SimulatedCar:
         odom_msg = Odometry()
         odom_msg.header.stamp = transform.header.stamp
         odom_msg.header.frame_id = self.tf_prefix + "odom"
-        odom_msg.pose.pose.position = transform.transform.translation
+        odom_msg.pose.pose.position.x = transform.transform.translation.x
+        odom_msg.pose.pose.position.y = transform.transform.translation.y
+        odom_msg.pose.pose.position.z = transform.transform.translation.z
         odom_msg.pose.pose.orientation = transform.transform.rotation
 
         odom_msg.child_frame_id = self.tf_prefix + "base_link"
@@ -275,44 +275,47 @@ class SimulatedCar:
         self.odom_pub.publish(odom_msg)
 
 
-class MushrSim:
+class MushrSim(Node):
     """
     __init__: Initialize params, publishers, subscribers, and timer
     """
 
     def __init__(self):
+        super().__init__("mushr_sim")
+        self.declare_parameter("use_tf_prefix", True)
+        self.use_tf_prefix = bool(self.get_parameter("use_tf_prefix").value)
 
-        self.use_tf_prefix = rospy.get_param("~use_tf_prefix", True)
-        # speed (rpm) = self.SPEED_TO_ERPM_OFFSET + self.SPEED_TO_ERPM_GAIN * speed (m/s)
-        self.speed_to_erpm_offset = float(
-            rospy.get_param("vesc/speed_to_erpm_offset", 0.0)
-        )
-        self.speed_to_erpm_gain = float(
-            rospy.get_param("vesc/speed_to_erpm_gain", 4614.0)
-        )
+        # speed (rpm) = SPEED_TO_ERPM_OFFSET + SPEED_TO_ERPM_GAIN * speed (m/s)
+        self.declare_parameter("vesc.speed_to_erpm_offset", 0.0)
+        self.declare_parameter("vesc.speed_to_erpm_gain", 4614.0)
+        self.speed_to_erpm_offset = float(self.get_parameter("vesc.speed_to_erpm_offset").value)
+        self.speed_to_erpm_gain = float(self.get_parameter("vesc.speed_to_erpm_gain").value)
 
-        # servo angle = self.STEERING_TO_SERVO_OFFSET + self.STEERING_TO_SERVO_GAIN * steering_angle (rad)
-        steering_to_servo_offset = float(
-            rospy.get_param("vesc/steering_angle_to_servo_offset", 0.5304)
-        )
-        steering_to_servo_gain = float(
-            rospy.get_param("vesc/steering_angle_to_servo_gain", -1.2135)
-        )
+        # servo angle = STEERING_TO_SERVO_OFFSET + STEERING_TO_SERVO_GAIN * steering_angle (rad)
+        self.declare_parameter("vesc.steering_angle_to_servo_offset", 0.5304)
+        self.declare_parameter("vesc.steering_angle_to_servo_gain", -1.2135)
+        steering_to_servo_offset = float(self.get_parameter("vesc.steering_angle_to_servo_offset").value)
+        steering_to_servo_gain = float(self.get_parameter("vesc.steering_angle_to_servo_gain").value)
 
-        # Length of the car
-        self.car_length = float(rospy.get_param("vesc/chassis_length", 0.33))
+        # Car geometry
+        self.declare_parameter("vesc.chassis_length", 0.33)
+        self.declare_parameter("vesc.wheelbase", 0.25)
+        self.car_length = float(self.get_parameter("vesc.chassis_length").value)
+        self.car_width = float(self.get_parameter("vesc.wheelbase").value)
 
-        # Width of the car
-        self.car_width = float(rospy.get_param("vesc/wheelbase", 0.25))
-
-        # The radius of the car wheel in meters
+        # Wheel radius (constant here; make a param if you want)
         self.car_wheel_radius = 0.0976 / 2.0
 
         # Rate at which to publish joints and tf
-        self.update_rate = float(rospy.get_param("~update_rate", 20.0))
+        self.declare_parameter("update_rate", 20.0)
+        self.update_rate = float(self.get_parameter("update_rate").value)
 
-        self.sensor_params = rospy.get_param("~fake_urg")
-        self.motion_params = rospy.get_param("~motion_model")
+        # Dict / structured params
+        # These must be set as YAML params (or you'll just get the defaults).
+        self.declare_parameter("fake_urg", {})       # expect dict-like YAML
+        self.declare_parameter("motion_model", {})   # expect dict-like YAML
+        self.sensor_params = dict(self.get_parameter("fake_urg").value)
+        self.motion_params = dict(self.get_parameter("motion_model").value)
         self.motion_params["steering_to_servo_offset"] = steering_to_servo_offset
         self.motion_params["steering_to_servo_gain"] = steering_to_servo_gain
         self.motion_params["car_length"] = self.car_length
@@ -323,34 +326,72 @@ class MushrSim:
         self.permissible_region = None
         self.map_info = None
 
+
+        self.map_service_name = '/static_map'
+
+        self.map_client = self.create_client(GetMap, self.map_service_name)
+
+        while not self.map_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Server not available, waiting again...')
+
+        def get_map():
+            req = GetMap.Request()
+            future = self.map_client.call_async(req)
+            rclpy.spin_until_future_complete(self, future)
+
+            if future.result() is not None:
+                
+                # Numpy array of dimension (future.result().map.info.height, future.result().map.info.width),
+                array_255 = np.array(future.result().map.data).reshape((future.result().map.info.height, future.result().map.info.width))
+                permissible_region = np.zeros_like(array_255, dtype=bool)
+                permissible_region[array_255 == 0] = 1  # With values 0: not permissible, 1: permissible 
+                
+                return permissible_region, future.result().map.info, future.result().map.msg
+            else:
+                self.get_logger().error('Service call failed %r' % (future.exception(),))
+                return None, None
         # Get the map
         self.permissible_region, self.map_info, self.raw_map_msg = get_map()
 
         # Publishes joint messages
-        self.br = tf2_ros.TransformBroadcaster()
+        self.br = tf2_ros.TransformBroadcaster(self)
 
         # Duration param controls how often to publish default map to odom tf
         # if no other nodes are publishing it
-        self.transform_listener = tf2_ros.TransformListener(tf2_ros.Buffer())
+        self.tf_buffer = tf2_ros.Buffer()
+        self.transform_listener = tf2_ros.TransformListener(self.tf_buffer, self)
 
         self._cars = []
-        self._car_reposition_srv = rospy.Service("~reposition", CarPose, self._car_reposition_cb)
-        self._car_spawn_srv = rospy.Service("~spawn", CarPose, self.spawn_car)
+        
+        self._car_reposition_srv = self.create_service(CarPose, "reposition", self._car_reposition_cb)
+        self._car_spawn_srv = self.create_service(CarPose, "spawn", self.spawn_car)
 
         self.last_stamp = None
         # Timer to updates joints and tf
-        self.update_timer = rospy.Timer(
-            rospy.Duration.from_sec(1.0 / self.update_rate), self.simulate_cb
-        )
+        period = 1.0 / self.update_rate
+        self.update_timer = self.create_timer(period, self.simulate_cb)
+
         self.default_motion_model = KinematicCarMotionModel(**self.motion_params)
 
-        for car_name in rospy.get_param("~car_names"):
-            initial_x = float(rospy.get_param("~{}/initial_x".format(car_name), 0.0))
-            initial_y = float(rospy.get_param("~{}/initial_y".format(car_name), 0.0))
-            initial_theta = float(rospy.get_param("~{}/initial_theta".format(car_name), 0.0))
+        # Declare and read list of car names
+        self.declare_parameter("car_names", [])
+        car_names = list(self.get_parameter("car_names").value)
+
+        for car_name in car_names:
+            # Per-car initial pose params
+            self.declare_parameter(f"{car_name}.initial_x", 0.0)
+            self.declare_parameter(f"{car_name}.initial_y", 0.0)
+            self.declare_parameter(f"{car_name}.initial_theta", 0.0)
+
+            initial_x = float(self.get_parameter(f"{car_name}.initial_x").value)
+            initial_y = float(self.get_parameter(f"{car_name}.initial_y").value)
+            initial_theta = float(self.get_parameter(f"{car_name}.initial_theta").value)
+
             self.spawn_car(car_name, initial_x, initial_y, initial_theta)
 
-    def spawn_car(self, car_name, x, y, theta):
+
+    def spawn_car(self, request, car_name, x, y, theta, response):
+        response.success = False
         if any(map(lambda car: car.car_name == car_name, self._cars)):
             return False
         sensor_params = self.sensor_params.copy()
@@ -358,36 +399,43 @@ class MushrSim:
 
         sensor_params["tf_prefix"] = car_tf_prefix
         try:
-            transform = self.transform_listener.buffer.lookup_transform(
-                car_tf_prefix + "base_link", car_tf_prefix + "laser_link", rospy.Time(0), rospy.Duration(10)
-            )
+            transform = self.tf_buffer.lookup_transform(
+                        car_tf_prefix + "base_link",
+                        car_tf_prefix + "laser_link",
+                        rclpy.time.Time(),                     # latest available is usually best here
+                        timeout=rclpy.duration.Duration(seconds=10.0),
+                        )
             # Drop stamp header
             transform = transform.transform
 
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
-            rospy.logerr("Failed to spawn new car named '{}' because no TF information was found".format(car_name))
+            self.get_logger().warn("Failed to spawn new car named '{}' because no TF information was found".format(car_name))
             return False
 
         sensor = FakeURG(self.raw_map_msg, topic_namespace=car_name + "/", x_offset=transform.translation.x,
                          **sensor_params)
+        
         new_car = SimulatedCar(car_name, x, y, theta, speed_to_erpm_gain=self.speed_to_erpm_gain,
                                speed_to_erpm_offset=self.speed_to_erpm_offset,
                                permissible_region=self.permissible_region, map_info=self.map_info, sensor_model=sensor,
                                motion_model=self.default_motion_model, tf_prefix=car_tf_prefix)
         self._cars.append(new_car)
-        return True
 
-    def simulate_cb(self, event):
+        response.success = True
+
+        return response
+
+    def simulate_cb(self):
         """
         Callback occurring at a rate of self.UPDATE_RATE. Updates the car joint
                   angles and tf of the base_footprint w.r.t odom. Also publishes robot state as a PoseStamped msg.
           event: Information about when this callback occurred
         """
-        now = rospy.Time.now()
+        now = self.get_clock().now()
         # Get the time since the last update
         if self.last_stamp is None:
             self.last_stamp = now
-        dt = (now - self.last_stamp).to_sec()
+        dt = (now - self.last_stamp).nanoseconds / 1e9
 
         # NOTE(nickswalker5-6-21): There's more stuff that could optionally
         # happen here. All the state updates could be calculated at once
@@ -402,13 +450,16 @@ class MushrSim:
 
         self.last_stamp = now
 
-    def _car_reposition_cb(self, request):
-        # Get the pose of the car w.r.t the map in meters
+    def _car_reposition_cb(self, request, response):
+        response.success = False
         for car in self._cars:
             if car.car_name == request.car_name:
                 car.reposition(request.x, request.y, request.theta)
-                return True
-        return False
+                response.success = True
+                break
+        return response
+
+
 
 
 def check_position_in_bounds(x, y, permissible_region):
@@ -421,28 +472,3 @@ def check_position_in_bounds(x, y, permissible_region):
                 int(y + 0.5), int(x + 0.5)
             ]
     )
-
-
-def get_map():
-    """
-    get_map: Get the map and map meta data
-      Returns: A tuple
-                First element is array representing map
-                  0 indicates out of bounds, 1 indicates in bounds
-                Second element is nav_msgs/MapMetaData message with meta data about the map
-    """
-    # Use the 'static_map' service (launched by MapServer.launch) to get the map
-    rospy.wait_for_service("/static_map", 10.0)
-    map_msg = rospy.ServiceProxy("/static_map", GetMap)().map
-    map_info = map_msg.info  # Save info about map for later use
-
-    # Create numpy array representing map for later use
-    array_255 = np.array(map_msg.data).reshape(
-        (map_msg.info.height, map_msg.info.width)
-    )
-    permissible_region = np.zeros_like(array_255, dtype=bool)
-    permissible_region[
-        array_255 == 0
-        ] = 1  # Numpy array of dimension (map_msg.info.height, map_msg.info.width),
-    # With values 0: not permissible, 1: permissible
-    return permissible_region, map_info, map_msg

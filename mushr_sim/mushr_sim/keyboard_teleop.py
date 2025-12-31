@@ -9,12 +9,14 @@ import atexit
 import os
 import signal
 from threading import Lock
+
 try:
-    from Tkinter import Frame, Label, Tk
+    from tkinter import Frame, Label, Tk
 except ImportError:
     from tkinter import Frame, Label, Tk
 
-import rospy
+import rclpy
+from rclpy.node import Node
 from ackermann_msgs.msg import AckermannDriveStamped
 
 # Keycodes for WASD on a standard keyboard with querty labels
@@ -26,20 +28,21 @@ keycodes = [25, 38 ,39 ,40]
 quit_keycode = 24
 
 
-class KeyboardTeleop:
+class KeyboardTeleop(Node):
     def __init__(self):
-        self.max_velocity = rospy.get_param("~speed", 2.0)
-        self.max_steering_angle = rospy.get_param("~max_steering_angle", 0.34)
+        super().__init__("keyboard_teleop")
+        self.max_velocity = self.get_parameter("~speed", 2.0)
+        self.max_steering_angle = self.get_parameter("~max_steering_angle", 0.34)
 
         self.quit_key = quit_keycode
         self.keycodes = keycodes
         self.state = [False] * 4  # matching keys
         self.state_lock = Lock()
 
-        self.state_pub = rospy.Publisher(
-            "mux/ackermann_cmd_mux/input/teleop", AckermannDriveStamped, queue_size=1
+        self.state_pub = self.create_publisher(
+            AckermannDriveStamped, "mux/ackermann_cmd_mux/input/teleop", 1
         )
-        rospy.Timer(rospy.Duration(0.1), self.publish_cb)
+        self.timer = self.create_timer(0.1, self.publish_cb)
         self.root = self.setup_tk()
 
     def setup_tk(self):
@@ -112,3 +115,11 @@ class KeyboardTeleop:
 
             if self.state_pub is not None:
                 self.state_pub.publish(ack)
+
+def main(args=None):
+    rclpy.init(args=args)
+    rclpy.spin(KeyboardTeleop())
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()

@@ -3,13 +3,15 @@
 # Copyright (c) 2019, The Personal Robotics Lab, The MuSHR Team, The Contributors of MuSHR
 # License: BSD 3-Clause. See LICENSE.md file in root directory.
 
-import rospy
+import rclpy
 from mushr_sim.fake_vesc_driver import FakeVescDriver
 
+def main(args=None):
+    rclpy.init(args=args)
+    rclpy.spin(FakeVescDriver())
+    rclpy.shutdown()
+
+    
+
 if __name__ == "__main__":
-    rospy.init_node("fake_vesc_driver_node")
-
-    fvs = FakeVescDriver()
-
-    rospy.spin()
-
+    main()

@@ -1,18 +1,16 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2019, The Personal Robotics Lab, The MuSHR Team, The Contributors of MuSHR
-# License: BSD 3-Clause. See LICENSE.md file in root directory.
-
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
-import tf_conversions
-from geometry_msgs.msg import Quaternion
+import tf_transformations
+from geometry_msgs.msg import Quaternion, TransformStamped
+
 
 
 def angle_to_quaternion(angle):
     """Convert an angle in radians into a quaternion _message_."""
-    return Quaternion(*tf_conversions.transformations.quaternion_from_euler(0, 0, angle))
+    return Quaternion(*tf_transformations.quaternion_from_euler(0, 0, angle))
 
 
 def quaternion_to_angle(q):
@@ -20,7 +18,7 @@ def quaternion_to_angle(q):
     The angle represents the yaw.
     This is not just the z component of the quaternion."""
     x, y, z, w = q.x, q.y, q.z, q.w
-    roll, pitch, yaw = tf_conversions.transformations.euler_from_quaternion((x, y, z, w))
+    roll, pitch, yaw = tf_transformations.euler_from_quaternion((x, y, z, w))
     return yaw
 
 
@@ -76,10 +74,18 @@ def world_to_map(pose, map_info):
     return map_pose
 
 
-def wrap_angle(val):
-    """
-    Clip an angle to be between -pi and pi
-      val: Angle in radians
-      Returns: Equivalent angle between -pi and pi (rad)
-    """
-    return np.fmod(val + np.pi, 2 * np.pi) - np.pi
+def make_transform_msg(translation, rotation, to_frame, from_frame):
+    t = TransformStamped()
+
+    t.header.stamp = rclpy.Time.now()
+    t.header.frame_id = from_frame
+    t.child_frame_id = to_frame
+    t.transform.translation.x = translation[0]
+    t.transform.translation.y = translation[1]
+    t.transform.translation.z = 0.0
+    q = tf_transformations.quaternion_from_euler(0, 0, rotation)
+    t.transform.rotation.x = q[0]
+    t.transform.rotation.y = q[1]
+    t.transform.rotation.z = q[2]
+    t.transform.rotation.w = q[3]
+    return t

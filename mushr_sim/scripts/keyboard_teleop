@@ -5,10 +5,9 @@
 
 import os
 import atexit
-import rospy
+import rclpy
 from threading import Thread
 from mushr_sim.keyboard_teleop import KeyboardTeleop
-
 
 class TeleopThread(Thread):
     def __init__(self):
@@ -18,29 +17,25 @@ class TeleopThread(Thread):
         # Temporarily disable keyboard repeats
         os.system("xset r off")
         self.teleop = KeyboardTeleop()
-        self.teleop.root.protocol("WM_DELETE_WINDOW", lambda: rospy.signal_shutdown("Window closed manually"))
+        rclpy.spin(self.teleop)
+        self.teleop.root.protocol("WM_DELETE_WINDOW", lambda: rclpy.shutdown())
         self.teleop.root.mainloop()
 
     def shutdown(self):
         self.teleop.root.quit()
         super(TeleopThread, self).shutdown()
 
-
-def main():
-    rospy.init_node("keyboard_teleop")
-
+def main(args=None):
+    rclpy.init(args=args)
     # Reenable key repeats on exit
     atexit.register(lambda: os.system("xset r on"))
 
     teleop_thread = TeleopThread()
     teleop_thread.start()
     print("Press Q to quit")
-    # Spin the main thread
-    rospy.spin()
-    # We either got SIGINT from control-C or ROS is otherwise coming down.
-    # Kill the GUI on the way out
+    # rclpy.spin(KeyboardTeleop())
+    rclpy.shutdown()
     teleop_thread.teleop.shutdown()
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
