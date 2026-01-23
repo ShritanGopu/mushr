@@ -3,6 +3,7 @@
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
+import rclpy
 import tf_transformations
 from geometry_msgs.msg import Quaternion, TransformStamped
 
@@ -21,6 +22,10 @@ def quaternion_to_angle(q):
     roll, pitch, yaw = tf_transformations.euler_from_quaternion((x, y, z, w))
     return yaw
 
+
+def wrap_angle(angle):
+    """Wrap angle to [-pi, pi]."""
+    return (angle + np.pi) % (2 * np.pi) - np.pi
 
 def map_to_world(pose, map_info):
     scale = map_info.resolution
@@ -77,7 +82,7 @@ def world_to_map(pose, map_info):
 def make_transform_msg(translation, rotation, to_frame, from_frame):
     t = TransformStamped()
 
-    t.header.stamp = rclpy.Time.now()
+    t.header.stamp = rclpy.time.Time().to_msg()
     t.header.frame_id = from_frame
     t.child_frame_id = to_frame
     t.transform.translation.x = translation[0]

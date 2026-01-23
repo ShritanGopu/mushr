@@ -2,6 +2,7 @@
 
 from __future__ import absolute_import, division, print_function
 
+from platform import node
 from threading import Lock
 
 import numpy as np
@@ -12,14 +13,13 @@ from geometry_msgs.msg import PoseStamped
 # from mushr_base import utils
 from mushr_sim.fake_urg import FakeURG
 from mushr_base.motion_model import KinematicCarMotionModel
-from mushr_sim.srv import CarPose
-from mushr_sim.utils import wrap_angle
+from mushr_sim_interfaces.srv import CarPose
+import mushr_sim.utils as utils
 from nav_msgs.msg import Odometry
 from nav_msgs.srv import GetMap
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float64
 from vesc_msgs.msg import VescStateStamped
-import utils
 
 class SimulatedCar(Node):
     """
@@ -219,7 +219,7 @@ class SimulatedCar(Node):
 
                 # Clip all joint angles
                 for i in range(len(self.joint_msg.position)):
-                    self.joint_msg.position[i] = wrap_angle(self.joint_msg.position[i])
+                    self.joint_msg.position[i] = utils.wrap_angle(self.joint_msg.position[i])
             else:
                 self.get_logger().warn("Not in bounds")
 
@@ -274,7 +274,6 @@ class SimulatedCar(Node):
 
         self.odom_pub.publish(odom_msg)
 
-
 class MushrSim(Node):
     """
     __init__: Initialize params, publishers, subscribers, and timer
@@ -310,29 +309,76 @@ class MushrSim(Node):
         self.declare_parameter("update_rate", 20.0)
         self.update_rate = float(self.get_parameter("update_rate").value)
 
-        # Dict / structured params
-        # These must be set as YAML params (or you'll just get the defaults).
-        self.declare_parameter("fake_urg", {})       # expect dict-like YAML
-        self.declare_parameter("motion_model", {})   # expect dict-like YAML
-        self.sensor_params = dict(self.get_parameter("fake_urg").value)
-        self.motion_params = dict(self.get_parameter("motion_model").value)
-        self.motion_params["steering_to_servo_offset"] = steering_to_servo_offset
-        self.motion_params["steering_to_servo_gain"] = steering_to_servo_gain
-        self.motion_params["car_length"] = self.car_length
-        self.motion_params["car_width"] = self.car_width
-        self.motion_params["car_wheel_radius"] = self.car_wheel_radius
+        # Motion model parameters
+        self.declare_parameter("motion_model.vel_bias", 0.0)
+        self.declare_parameter("motion_model.vel_std", 0.0001)
+        self.declare_parameter("motion_model.delta_bias", 0.0)
+        self.declare_parameter("motion_model.delta_std", 0.000001)
+        self.declare_parameter("motion_model.x_bias", 0.0)
+        self.declare_parameter("motion_model.x_std", 0.0000001)
+        self.declare_parameter("motion_model.x_vel_std", 0.001)
+        self.declare_parameter("motion_model.y_bias", 0.0)
+        self.declare_parameter("motion_model.y_std", 0.000001)
+        self.declare_parameter("motion_model.y_vel_std", 0.001)
+        self.declare_parameter("motion_model.theta_bias", 0.0)
+        self.declare_parameter("motion_model.theta_std", 0.000001)
+
+        # FakeURG sensor parameters
+        self.declare_parameter("fake_urg.update_rate", 10.0)
+        self.declare_parameter("fake_urg.theta_discretization", 656)
+        self.declare_parameter("fake_urg.z_hit", 0.8)
+        self.declare_parameter("fake_urg.z_short", 0.03)
+        self.declare_parameter("fake_urg.z_max", 0.16)
+        self.declare_parameter("fake_urg.z_blackout_max", 50)
+        self.declare_parameter("fake_urg.z_rand", 0.01)
+        self.declare_parameter("fake_urg.z_sigma", 0.03)
+        self.declare_parameter("fake_urg.tf_prefix", "")
+
+        # Extract motion model parameters
+        self.motion_params = {
+            "vel_bias": float(self.get_parameter("motion_model.vel_bias").value),
+            "vel_std": float(self.get_parameter("motion_model.vel_std").value),
+            "delta_bias": float(self.get_parameter("motion_model.delta_bias").value),
+            "delta_std": float(self.get_parameter("motion_model.delta_std").value),
+            "x_bias": float(self.get_parameter("motion_model.x_bias").value),
+            "x_std": float(self.get_parameter("motion_model.x_std").value),
+            "x_vel_std": float(self.get_parameter("motion_model.x_vel_std").value),
+            "y_bias": float(self.get_parameter("motion_model.y_bias").value),
+            "y_std": float(self.get_parameter("motion_model.y_std").value),
+            "y_vel_std": float(self.get_parameter("motion_model.y_vel_std").value),
+            "theta_bias": float(self.get_parameter("motion_model.theta_bias").value),
+            "theta_std": float(self.get_parameter("motion_model.theta_std").value),
+            "steering_to_servo_offset": steering_to_servo_offset,
+            "steering_to_servo_gain": steering_to_servo_gain,
+            "car_length": self.car_length,
+            "car_width": self.car_width,
+            "car_wheel_radius": self.car_wheel_radius,
+        }
+
+        # Extract FakeURG sensor parameters
+        self.sensor_params = {
+            "update_rate": float(self.get_parameter("fake_urg.update_rate").value),
+            "theta_discretization": int(self.get_parameter("fake_urg.theta_discretization").value),
+            "z_hit": float(self.get_parameter("fake_urg.z_hit").value),
+            "z_short": float(self.get_parameter("fake_urg.z_short").value),
+            "z_max": float(self.get_parameter("fake_urg.z_max").value),
+            "z_blackout_max": int(self.get_parameter("fake_urg.z_blackout_max").value),
+            "z_rand": float(self.get_parameter("fake_urg.z_rand").value),
+            "z_sigma": float(self.get_parameter("fake_urg.z_sigma").value),
+            "tf_prefix": str(self.get_parameter("fake_urg.tf_prefix").value),
+        }
 
         # The map and map params
         self.permissible_region = None
         self.map_info = None
 
 
-        self.map_service_name = '/static_map'
+        self.map_service_name = '/map_server/map'
 
         self.map_client = self.create_client(GetMap, self.map_service_name)
 
         while not self.map_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Server not available, waiting again...')
+            self.get_logger().info('Map Server not available, waiting again...')
 
         def get_map():
             req = GetMap.Request()
@@ -346,7 +392,7 @@ class MushrSim(Node):
                 permissible_region = np.zeros_like(array_255, dtype=bool)
                 permissible_region[array_255 == 0] = 1  # With values 0: not permissible, 1: permissible 
                 
-                return permissible_region, future.result().map.info, future.result().map.msg
+                return permissible_region, future.result().map.info, future.result().map.data
             else:
                 self.get_logger().error('Service call failed %r' % (future.exception(),))
                 return None, None
@@ -374,7 +420,9 @@ class MushrSim(Node):
         self.default_motion_model = KinematicCarMotionModel(**self.motion_params)
 
         # Declare and read list of car names
-        self.declare_parameter("car_names", [])
+        self.declare_parameter("car_names", [""])
+        # pass in the list of car names in logger
+
         car_names = list(self.get_parameter("car_names").value)
 
         for car_name in car_names:
@@ -387,7 +435,13 @@ class MushrSim(Node):
             initial_y = float(self.get_parameter(f"{car_name}.initial_y").value)
             initial_theta = float(self.get_parameter(f"{car_name}.initial_theta").value)
 
-            self.spawn_car(car_name, initial_x, initial_y, initial_theta)
+            request = CarPose.Request()
+            request.car_name = car_name
+            request.x = initial_x
+            request.y = initial_y
+            request.theta = initial_theta
+            response = CarPose.Response()
+            self.spawn_car(request, car_name, initial_x, initial_y, initial_theta, response)
 
 
     def spawn_car(self, request, car_name, x, y, theta, response):
@@ -460,8 +514,6 @@ class MushrSim(Node):
         return response
 
 
-
-
 def check_position_in_bounds(x, y, permissible_region):
     if permissible_region is None:
         return True
@@ -472,3 +524,17 @@ def check_position_in_bounds(x, y, permissible_region):
                 int(y + 0.5), int(x + 0.5)
             ]
     )
+
+def main(args=None):
+    rclpy.init(args=args)
+    
+    try:
+        rclpy.spin(MushrSim())
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()

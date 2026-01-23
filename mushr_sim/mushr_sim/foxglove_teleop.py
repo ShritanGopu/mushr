@@ -2,6 +2,7 @@
 
 # Copyright (c) 2019, The Personal Robotics Lab, The MuSHR Team, The Contributors of MuSHR
 # License: BSD 3-Clause. See LICENSE.md file in root directory.
+from threading import Thread
 import rclpy
 from rclpy.node import Node
 from ackermann_msgs.msg import AckermannDriveStamped
@@ -12,8 +13,13 @@ import std_msgs
 class FoxgloveTeleop(Node):
     def __init__(self):
         super().__init__("foxglove_teleop")
-        self.max_velocity = self.get_parameter("~speed", 2.0)
-        self.max_steering_angle = self.get_parameter("~max_steering_angle", 0.34)
+        self.declare_parameter("speed", 2.0)
+        self.declare_parameter("max_steering_angle", 0.34) 
+
+        self.max_velocity = self.get_parameter("speed").value
+        # self.get_logger().info("Speed value: " + str(self.max_velocity))
+
+        self.max_steering_angle = self.get_parameter("max_steering_angle").value
 
         self.state_pub = self.create_publisher(
             AckermannDriveStamped, "mux/ackermann_cmd_mux/input/teleop", 1
@@ -55,11 +61,42 @@ class FoxgloveTeleop(Node):
         if self.state_pub is not None:
             self.state_pub.publish(ack)
 
+
+class TeleopThread(Thread):
+    def __init__(self, node):
+        super(TeleopThread, self).__init__()
+        self.teleop = node
+
+    def run(self):
+        self.teleop.get_logger().info("Starting Foxglove teleop thread")
+        try:
+            rclpy.spin(self.teleop)  # blocks until Ctrl+C
+        except KeyboardInterrupt:
+            pass               # Ctrl+C lands here
+        finally:
+            self.teleop.destroy_node()
+            rclpy.shutdown()
+
+    def shutdown(self):
+        self.teleop.root.quit()
+        super(TeleopThread, self).shutdown()
+
+
 def main(args=None):
     rclpy.init(args=args)
-    rclpy.spin(FoxgloveTeleop())
-    rclpy.shutdown()
 
-if __name__ == '__main__':
+    node = FoxgloveTeleop()   # create node first
+    teleop_thread = TeleopThread(node)
+    teleop_thread.start()
+
+    # try:
+    #     rclpy.spin(node)
+    # except KeyboardInterrupt:
+    #     pass
+    # finally:
+    #     node.destroy_node()
+    #     rclpy.shutdown()
+
+
+if __name__ == "__main__":
     main()
-

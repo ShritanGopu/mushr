@@ -1,15 +1,35 @@
 from setuptools import find_packages, setup
+from glob import glob
+import os
 
-package_name = 'mushr_sim'
+def recursive_files(root_dir: str):
+    matches = []
+    for path, _, files in os.walk(root_dir):
+        for f in files:
+            matches.append(os.path.join(path, f))
+    return matches
 
 setup(
-    name=package_name,
+    name="mushr_sim",
     version='0.0.0',
     packages=find_packages(exclude=['test']),
     data_files=[
         ('share/ament_index/resource_index/packages',
-            ['resource/' + package_name]),
-        ('share/' + package_name, ['package.xml']),
+            ['resource/' + "mushr_sim"]),
+        ('share/' + "mushr_sim", ['package.xml']),
+
+        (os.path.join('share', "mushr_sim", 'launch'),
+            glob('launch/*.launch.py') +
+            glob('launch/*.launch.xml') +
+            glob('launch/*.py') +
+            glob('launch/*.xml') +
+            glob('launch/*.yaml') +
+            glob('launch/*.yml')
+        ),
+
+        (os.path.join('share', "mushr_sim", 'config'),
+            recursive_files('config')
+        ),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -20,7 +40,14 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            '',
+            'fake_vesc_driver = mushr_sim.fake_vesc_driver:main',
+            'foxglove_teleop = mushr_sim.foxglove_teleop:main',
+            'keyboard_teleop = mushr_sim.keyboard_teleop:main',
+            'sim_node = mushr_sim.mushr_sim:main',
+            'simulated_car_node = mushr_sim.simulated_car_node:main',
+            'fake_urg = mushr_sim.fake_urg_node:main',
+            'clicked_point_to_reposition = mushr_sim.clicked_point_to_reposition:main',
+            'throttle_interpolator = mushr_sim.throttle_interpolator:main',
         ],
     },
 )

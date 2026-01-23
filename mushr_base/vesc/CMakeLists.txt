@@ -1,5 +1,0 @@
-cmake_minimum_required(VERSION 3.5)
-project(vesc)
-add_compile_options(-std=c++14)
-find_package(ament_cmake REQUIRED)
-ament_package()

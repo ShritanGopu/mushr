@@ -10,10 +10,8 @@
   <license>BSD</license>
 
   <!-- Interface generation (CarPose.srv) -->
-  <build_depend>rosidl_default_generators</build_depend>
+  
   <build_depend>std_msgs</build_depend>
-
-  <exec_depend>rosidl_default_runtime</exec_depend>
   <exec_depend>std_msgs</exec_depend>
 
   <!-- Python runtime -->
@@ -32,8 +30,9 @@
   <exec_depend>vesc_msgs</exec_depend>
   <exec_depend>ackermann_msgs</exec_depend>
   <exec_depend>vesc_driver</exec_depend>
+  <exec_depend>mushr_sim_interfaces</exec_depend>
   <exec_depend>vesc_ackermann</exec_depend>
-
+  <exec_depend>fake_localization_ros2</exec_depend>
 
   <member_of_group>rosidl_interface_packages</member_of_group>
 

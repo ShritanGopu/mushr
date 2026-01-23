@@ -20,7 +20,8 @@
   <depend>yaml-cpp</depend>
 
   <export>
-    <pluginlib plugin="${prefix}/plugins/components.xml"/>
+    <build_type>ament_cmake</build_type>
+    <pluginlib plugin="${prefix}/components.xml"/>
     <rclcpp_components/>
   </export>
 </package>

@@ -20,10 +20,9 @@ def main(args=None):
     node = Node('clicked_point_to_reposition')
 
     sub = node.create_subscription(PointStamped, "/clicked_point", point_clicked_cb, 1)
-    pub = node.create_publisher(PoseStamped, "~reposition", 1)
+    pub = node.create_publisher(PoseStamped, "reposition", 1)
 
     rclpy.spin(node)
-    rclpy.shutdown()
 
 if __name__ == "__main__":
     main()

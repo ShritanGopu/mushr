@@ -8,7 +8,7 @@ from __future__ import absolute_import, division, print_function
 import atexit
 import os
 import signal
-from threading import Lock
+from threading import Lock, Thread
 
 try:
     from tkinter import Frame, Label, Tk
@@ -31,8 +31,10 @@ quit_keycode = 24
 class KeyboardTeleop(Node):
     def __init__(self):
         super().__init__("keyboard_teleop")
-        self.max_velocity = self.get_parameter("~speed", 2.0)
-        self.max_steering_angle = self.get_parameter("~max_steering_angle", 0.34)
+        self.declare_parameter("speed", 2.0)
+        self.declare_parameter("max_steering_angle", 0.34)
+        self.max_velocity = self.get_parameter("speed").value
+        self.max_steering_angle = self.get_parameter("max_steering_angle").value
 
         self.quit_key = quit_keycode
         self.keycodes = keycodes
@@ -42,8 +44,11 @@ class KeyboardTeleop(Node):
         self.state_pub = self.create_publisher(
             AckermannDriveStamped, "mux/ackermann_cmd_mux/input/teleop", 1
         )
-        self.timer = self.create_timer(0.1, self.publish_cb)
         self.root = self.setup_tk()
+        self.timer = self.create_timer(0.1, self.publish_cb)
+        self.root.protocol("WM_DELETE_WINDOW", lambda: rclpy.shutdown())
+        self.root.mainloop()
+
 
     def setup_tk(self):
         root = Tk()
@@ -95,13 +100,13 @@ class KeyboardTeleop(Node):
                 if self.keyeq(ev, k):
                     self.state[i] = False
 
-    def publish_cb(self, _):
+    def publish_cb(self):
         with self.state_lock:
             if not self.control:
                 return
 
             cmd_up, cmd_left, cmd_down, cmd_right = self.state
-
+            self.get_logger().info(f"cmds: {self.state}")
             ack = AckermannDriveStamped()
             if cmd_up:
                 ack.drive.speed = self.max_velocity
@@ -116,10 +121,38 @@ class KeyboardTeleop(Node):
             if self.state_pub is not None:
                 self.state_pub.publish(ack)
 
+class TeleopThread(Thread):
+    def __init__(self, node):
+        super(TeleopThread, self).__init__()
+        self.teleop = node
+
+    def run(self):
+        # Temporarily disable keyboard repeats
+        # os.system("xset r off")
+        # self.teleop = KeyboardTeleop()
+        # self.teleop.root.mainloop()
+        print("Starting TK mainloop")
+        try:
+            rclpy.spin(self.teleop)  # blocks until Ctrl+C
+        except KeyboardInterrupt:
+            pass               # Ctrl+C lands here
+        finally:
+            self.teleop.destroy_node()
+            rclpy.shutdown()
+
+    def shutdown(self):
+        self.teleop.root.quit()
+        super(TeleopThread, self).shutdown()
+
 def main(args=None):
     rclpy.init(args=args)
-    rclpy.spin(KeyboardTeleop())
-    rclpy.shutdown()
+    node = KeyboardTeleop()
+    # Reenable key repeats on exit
+    atexit.register(lambda: os.system("xset r on"))
+
+    teleop_thread = TeleopThread(node)
+    teleop_thread.start()
+    print("Press Q to quit")
 
 if __name__ == '__main__':
     main()

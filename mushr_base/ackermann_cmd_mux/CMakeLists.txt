@@ -7,10 +7,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
-find_package(pluginlib REQUIRED)
 find_package(ackermann_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(yaml-cpp REQUIRED)
+find_package(yaml_cpp_vendor REQUIRED)
 
 include_directories(include)
 
@@ -22,15 +21,19 @@ add_library(${PROJECT_NAME}_node SHARED
 ament_target_dependencies(${PROJECT_NAME}_node
   rclcpp
   rclcpp_components
-  pluginlib
   ackermann_msgs
   std_msgs
+  yaml_cpp_vendor
+)
+
+target_link_libraries(${PROJECT_NAME}_node
   yaml-cpp
 )
 
 rclcpp_components_register_nodes(${PROJECT_NAME}_node
   "ackermann_cmd_mux::AckermannCmdMuxNode"
 )
+
 
 install(
   TARGETS ${PROJECT_NAME}_node

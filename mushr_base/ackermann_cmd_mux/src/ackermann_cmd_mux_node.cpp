@@ -1,7 +1,7 @@
 #include <fstream>
 #include <chrono>
 #include <yaml-cpp/yaml.h>
-#include <pluginlib/class_list_macros.hpp>
+#include <rclcpp_components/register_node_macro.hpp>
 
 #include "ackermann_cmd_mux/ackermann_cmd_mux_node.hpp"
 
@@ -184,6 +184,5 @@ void AckermannCmdMuxNode::publish_active(const std::string & name)
 }
 
 } // namespace ackermann_cmd_mux
+RCLCPP_COMPONENTS_REGISTER_NODE(ackermann_cmd_mux::AckermannCmdMuxNode)
 
-// Export as a ROS2 component
-PLUGINLIB_EXPORT_CLASS(ackermann_cmd_mux::AckermannCmdMuxNode, rclcpp::Node)
