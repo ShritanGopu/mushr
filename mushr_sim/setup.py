@@ -44,8 +44,6 @@ setup(
             'foxglove_teleop = mushr_sim.foxglove_teleop:main',
             'keyboard_teleop = mushr_sim.keyboard_teleop:main',
             'sim_node = mushr_sim.mushr_sim:main',
-            'simulated_car_node = mushr_sim.simulated_car_node:main',
-            'fake_urg = mushr_sim.fake_urg_node:main',
             'clicked_point_to_reposition = mushr_sim.clicked_point_to_reposition:main',
             'throttle_interpolator = mushr_sim.throttle_interpolator:main',
         ],

@@ -2,7 +2,6 @@
 
 from __future__ import absolute_import, division, print_function
 
-from platform import node
 from threading import Lock
 
 import numpy as np
@@ -20,16 +19,18 @@ from nav_msgs.srv import GetMap
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float64
 from vesc_msgs.msg import VescStateStamped
-import utils
+import mushr_base.utils as utils
 
-class SimulatedCar(Node):
+
+class SimulatedCar():
     """
     Publishes joint and tf information about the racecar
     """
 
-    def __init__(self, car_name, x, y, theta, map_info=None, permissible_region=None, speed_to_erpm_offset=None,
+    def __init__(self, node,  car_name, x, y, theta, map_info=None, permissible_region=None, speed_to_erpm_offset=None,
                  speed_to_erpm_gain=None, motion_model=None, sensor_model=None, tf_prefix=None):
-        super().__init__("simulated_car_{}".format(car_name))
+        
+        self.node = node
         self.car_name = car_name
         self.tf_prefix = tf_prefix
         if self.tf_prefix is None:
@@ -73,20 +74,19 @@ class SimulatedCar(Node):
 
         self.fake_laser = sensor_model
         # Publishes joint values
-        self.state_pub = self.create_publisher(PoseStamped, f"/{car_name}/car_pose", 1)
-        self.odom_pub = self.create_publisher(Odometry, f"/{car_name}/odom", 1)
+        self.state_pub = self.node.create_publisher(PoseStamped, f"car/{car_name}/car_pose", 1)
+        self.odom_pub = self.node.create_publisher(Odometry, f"car/{car_name}/odom", 5)
 
         # Publishes joint values
-        self.cur_joints_pub = self.create_publisher(JointState, f"/{car_name}/joint_states", 1)
-
+        self.cur_joints_pub = self.node.create_publisher(JointState, f"car/{car_name}/joint_states", 1) 
         # Subscribes to the initial pose of the car
-        self.init_pose_sub = self.create_subscription(PoseStamped, "/reposition", self.init_pose_cb, 1)
+        self.init_pose_sub = self.node.create_subscription(PoseStamped, "/reposition", self.init_pose_cb, 1)
 
         # Subscribes to info about the bldc (particularly the speed in rpm)
-        self.speed_sub = self.create_subscription(VescStateStamped, f"/{car_name}/vesc/sensors/core", self.speed_cb, 1)
+        self.speed_sub = self.node.create_subscription(VescStateStamped, f"/{car_name}/car/sensors/core", self.speed_cb, 1)
         
         # Subscribes to the position of the servo arm
-        self.servo_sub = self.create_subscription(Float64, f"/{car_name}/vesc/sensors/servo_position_command", self.servo_cb, 1)
+        self.servo_sub = self.node.create_subscription(Float64, f"/{car_name}/car/sensors/servo_position_command", self.servo_cb, 1)
         self.motion_model = motion_model
 
     def init_pose_cb(self, msg):
@@ -108,7 +108,7 @@ class SimulatedCar(Node):
             # Update the pose of the car if either bounds checking is not enabled,
             # or bounds checking is enabled but the car is in-bounds
             if not check_position_in_bounds(map_rx_pose[0], map_rx_pose[1], self.permissible_region):
-                self.get_logger().warn("Requested reposition into obstacle. Ignoring.")
+                self.node.get_logger().warn("Requested reposition into obstacle. Ignoring.")
                 return
 
         with self.odom_to_base_lock:
@@ -122,6 +122,7 @@ class SimulatedCar(Node):
           msg: vesc_msgs/VescStateStamped message containing the speed of the car (rpm)
         """
         self.last_speed_lock.acquire()
+        self.node.get_logger().debug(f"Received speed rpm: {msg.state.speed}")
         self.last_speed = (msg.state.speed - self.speed_to_erpm_offset) / self.speed_to_erpm_gain
         self.last_speed_lock.release()
 
@@ -146,8 +147,9 @@ class SimulatedCar(Node):
             )
             # Update the pose of the car if either bounds checking is not enabled,
             # or bounds checking is enabled but the car is in-bounds
+
             if not check_position_in_bounds(map_rx_pose[0], map_rx_pose[1], self.permissible_region):
-                self.get_logger().warn("Requested reposition into obstacle. Ignoring.")
+                self.node.get_logger().warn("Requested reposition into obstacle. Ignoring.")
                 return
 
         with self.odom_to_base_lock:
@@ -164,7 +166,6 @@ class SimulatedCar(Node):
         # Add noise to the speed
         with self.last_speed_lock:
             v = self.last_speed
-
         # Add noise to the steering angle
         with self.last_steering_angle_lock:
             delta = self.last_steering_angle
@@ -179,11 +180,15 @@ class SimulatedCar(Node):
                 ],
                 dtype=float,
             )
+            # self.get_logger().warn(f"Requested reposition to map coords: {v, delta, dt}")
 
+            dt = dt / 100000000.0
             state_changes, joint_changes = self.motion_model.apply_motion_model(new_pose[np.newaxis, ...],
                                                                              np.array([[v, delta]]), dt)
 
             state_changes = state_changes.squeeze()
+            # self.get_logger().warn(f"Requested reposition to map coords: {state_changes}")
+
             joint_changes = joint_changes.squeeze()
             in_bounds = True
             if self.permissible_region is not None:
@@ -202,10 +207,12 @@ class SimulatedCar(Node):
                 # Get the new pose w.r.t the map in pixels
                 if self.permissible_region is not None:
                     new_map_pose = utils.world_to_map(new_map_pose, self.map_info)
-                    in_bounds = check_position_in_bounds(new_map_pose[0], new_map_pose[1], self.permissible_region)
 
+                    in_bounds = check_position_in_bounds(new_map_pose[0], new_map_pose[1], self.permissible_region)
+                    
             if in_bounds:
                 # Update pose of base_footprint w.r.t odom
+                self.node.get_logger().info(f"Updating pose to: {new_pose}")
                 self.odom_to_base_trans[0] = new_pose[0]
                 self.odom_to_base_trans[1] = new_pose[1]
                 self.odom_to_base_rot = new_pose[2]
@@ -220,16 +227,16 @@ class SimulatedCar(Node):
 
                 # Clip all joint angles
                 for i in range(len(self.joint_msg.position)):
-                    self.joint_msg.position[i] = wrap_angle(self.joint_msg.position[i])
+                    self.joint_msg.position[i] = utils.wrap_angle(self.joint_msg.position[i])
             else:
-                self.get_logger().warn("Not in bounds")
+                self.node.get_logger().warn("Not in bounds")
 
             # Publish the joint states
             self.joint_msg.header.stamp = now.to_msg()
             self.cur_joints_pub.publish(self.joint_msg)
 
             t = utils.make_transform_msg(self.odom_to_base_trans, self.odom_to_base_rot,
-                                         self.tf_prefix + "ground_truth_base_footprint", "map")
+                                         self.tf_prefix + "base_footprint", "car/odom", now)
 
             # Tell the laser where we are
             # rospy.logerr_throttle(1,t)
@@ -245,7 +252,7 @@ class SimulatedCar(Node):
         cur_pose.header.frame_id = "map"
 
         t = rclpy.time.Time.from_msg(transform.header.stamp)
-        t = t - rclpy.duration.Duration(seconds=0.5)
+        t = rclpy.duration.Duration(seconds=0.5) + t
         cur_pose.header.stamp = t.to_msg()
 
         # for visualization purposes, delay header stamp
@@ -268,12 +275,13 @@ class SimulatedCar(Node):
         odom_msg.pose.pose.position.z = transform.transform.translation.z
         odom_msg.pose.pose.orientation = transform.transform.rotation
 
-        odom_msg.child_frame_id = self.tf_prefix + "base_link"
+        odom_msg.child_frame_id = self.tf_prefix + "base_footprint"
         odom_msg.twist.twist.linear.x = changes[0]
         odom_msg.twist.twist.linear.y = changes[1]
         odom_msg.twist.twist.angular.z = changes[2]
 
         self.odom_pub.publish(odom_msg)
+
 
 def check_position_in_bounds(x, y, permissible_region):
     if permissible_region is None:
@@ -285,19 +293,3 @@ def check_position_in_bounds(x, y, permissible_region):
                 int(y + 0.5), int(x + 0.5)
             ]
     )
-
-import rclpy
-
-def main(args=None):
-    rclpy.init(args=args)
-    # node = SimulatedCar()
-    # try:   # blocks until Ctrl+C
-    #     rclpy.spin(node)
-    # except KeyboardInterrupt:
-    #     pass               # Ctrl+C lands here
-    # finally:
-    #     node.destroy_node()
-    #     rclpy.shutdown()
-
-if __name__ == '__main__':
-    main()

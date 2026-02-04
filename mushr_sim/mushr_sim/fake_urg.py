@@ -12,15 +12,17 @@ import range_libc
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Transform
-from mushr_sim import utils
+# print("problem after this")
+import mushr_base.utils as utils
 from ndarray_msg_utils import to_ros_msg, from_ros_msg, NDArray
 from sensor_msgs.msg import LaserScan
 
 
-class FakeURG(Node):
-    def __init__(self, map_msg, topic_namespace="", x_offset=None, **kwargs):
-        super().__init__("fake_urg")
+class FakeURG():
+    def __init__(self, node=Node, map_msg=None, topic_namespace="", x_offset=None, **kwargs):
+        
 
+        self.node = node
         required = {"update_rate", "theta_discretization", "min_range_meters", "max_range_meters", "angle_step",
                     "angle_min", "angle_max", "z_short", "z_max", "z_blackout_max", "z_rand", "z_hit", "z_sigma",
                     "tf_prefix",
@@ -44,9 +46,9 @@ class FakeURG(Node):
 
         self.x_offset = x_offset
 
-        self.laser_pub = self.create_publisher(NDArray, topic_namespace, 10)
+        self.laser_pub = self.node.create_publisher(LaserScan, topic_namespace, 10)
 
-        self.update_timer = self.create_timer(1.0/self.update_rate, self.timer_cb)
+        self.update_timer = self.node.create_timer(1.0/self.update_rate, self.timer_cb)
 
         # Start at 0,0,0
         self.transform = Transform()
@@ -96,7 +98,7 @@ class FakeURG(Node):
                 else:
                     break
 
-    def timer_cb(self, event):
+    def timer_cb(self):
         now = rclpy.clock.Clock().now().to_msg()
         ls = LaserScan()
         ls.header.frame_id = self.tf_prefix + "laser_link"
@@ -120,11 +122,3 @@ class FakeURG(Node):
             self.noise_laser_scan(self.ranges)
             ls.ranges = self.ranges
             self.laser_pub.publish(ls)
-
-def main(args=None):
-    rclpy.init(args=args)
-    rclpy.spin(FakeURG())
-    rclpy.shutdown()
-
-if __name__ == '__main__':
-    main()

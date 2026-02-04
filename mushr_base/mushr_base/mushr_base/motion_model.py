@@ -50,6 +50,7 @@ class KinematicCarMotionModel:
         num_states = states.shape[0]
 
         vel, delta = controls[:, 0], controls[:, 1]
+        # print(vel, delta, dt)
         theta = states[:, 2]
 
         changes[:, 2] = (vel / car_length) * np.tan(delta) * dt
@@ -57,6 +58,8 @@ class KinematicCarMotionModel:
         dtheta = changes[:, 2]
         changes[:, 0] = vel * np.cos(theta) * dt
         changes[:, 1] = vel * np.sin(theta) * dt
+
+        # print(changes[0][0])
 
         val_indices = np.abs(delta) >= delta_threshold
         val_theta = theta[val_indices]

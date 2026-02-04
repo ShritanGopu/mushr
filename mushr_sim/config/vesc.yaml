@@ -17,7 +17,7 @@
     chassis_length: 0.33
 
     vesc_to_odom:
-      publish_tf: false
+      publish_tf: true
 
 
 /**/vesc_driver:

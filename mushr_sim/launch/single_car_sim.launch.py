@@ -62,13 +62,15 @@ def generate_launch_description():
         output="screen",
         remappings=[
             ("/reposition", "/mushr_sim/reposition"),
+            ("/car/vesc/sensors/core", "/car/car/sensors/core"),
+        ("/car/vesc/sensors/servo_position_command", "/car/car/sensors/servo_position_command"),
         ],
     )
 
     mushr_sim_node = Node(
         package="mushr_sim",
         executable="sim_node",
-        name="mushr_sim",
+        name="mushr_sim_main",
         output="screen",
         parameters=[
             mushr_sim_yaml,
@@ -96,6 +98,8 @@ def generate_launch_description():
                 "/car_pose",
                 [TextSubstitution(text="/"), "car", TextSubstitution(text="/car_pose")],
             ),
+            ("/car/vesc/sensors/core", "/car/car/sensors/core"),
+            ("/car/vesc/sensors/servo_position_command", "/car/car/sensors/servo_position_command"),
         ],
     )
 

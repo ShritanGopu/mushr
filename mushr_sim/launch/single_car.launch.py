@@ -173,7 +173,7 @@ def generate_launch_description():
                 )
             ),
             launch_arguments={
-                "mux_output_topic": f"/{car}/mux/ackermann_cmd_mux/output",
+                "mux_output_topic": f"output",
                 "car_name": f"/{car}",
             }.items(),
         )

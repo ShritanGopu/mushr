@@ -16,6 +16,11 @@ mushr_sim:
       theta_std: 0.000001
     fake_urg:
       update_rate: 10.0
+      angle_min: -2.35619449615
+      angle_max: 2.35619449615
+      angle_step: 0.00727220521664
+      min_range_meters: 0.02
+      max_range_meters: 5.6
       theta_discretization: 656
       z_short: 0.03
       z_max: 0.16
@@ -24,3 +29,5 @@ mushr_sim:
       z_hit: 0.8
       z_sigma: 0.03
       tf_prefix: ""
+    vesc.speed_to_erpm_gain: 4614.0
+    vesc.speed_to_erpm_offset: 0.0
