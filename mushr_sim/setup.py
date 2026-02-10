@@ -29,6 +29,9 @@ setup(
 
         (os.path.join('share', "mushr_sim", 'config'),
             recursive_files('config')
+        ),        
+        (os.path.join('share', "mushr_sim", 'maps'),
+            recursive_files('maps')
         ),
     ],
     install_requires=['setuptools'],

@@ -30,9 +30,10 @@ install(PROGRAMS
 # Shared resources
 # -------------------------------
 install(DIRECTORY
-  config
-  launch
-  maps
+  config/
+  launch/
+  maps/
+
   DESTINATION share/${PROJECT_NAME}
 )
 

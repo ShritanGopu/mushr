@@ -20,8 +20,8 @@ class ConverterThread(Thread):
         super(ConverterThread, self).shutdown()
 
 
-def main():
-    rclpy.init("nav_msg_converter")
+def main(args=None):
+    rclpy.init(args=args)
 
     converter_thread = ConverterThread()
     converter_thread.start()

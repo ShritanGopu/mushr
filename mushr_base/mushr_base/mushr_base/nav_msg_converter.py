@@ -16,23 +16,20 @@ class NavMsgConverter(Node):
     Attributes:
         name (string) rosnode name
     """
-
-    super().__init__('nav_msg_converter')
-
     self.type = None
 
     # Create the subscribers
     self.pose_sub = self.create_subscription(
-      self.get_parameter("~pose_topic"), PoseStamped, self.publish_pose, queue_size=100
+      self.get_parameter("pose_topic"), PoseStamped, self.publish_pose, queue_size=100
     )
     self.type_sub = self.create_subscription(
-      self.get_parameter("~type_topic"), String, self.save_type, queue_size=100
+      self.get_parameter("type_topic"), String, self.save_type, queue_size=100
     )
 
     # Create the publishers
-    self.goal_pub = self.create_publisher(self.get_parameter("~goal_topic"), PoseStamped, queue_size=1)
-    self.car_pose_pub = self.create_publisher(self.get_parameter("~start_topic"), PoseStamped, queue_size=1)
-    self.pose_estimate_pub = self.create_publisher(self.get_parameter("~estimate_topic"), PoseStamped, queue_size=1)
+    self.goal_pub = self.create_publisher(self.get_parameter("goal_topic"), PoseStamped, queue_size=1)
+    self.car_pose_pub = self.create_publisher(self.get_parameter("start_topic"), PoseStamped, queue_size=1)
+    self.pose_estimate_pub = self.create_publisher(self.get_parameter("estimate_topic"), PoseStamped, queue_size=1)
 
   def publish_pose(self, pose_msg: PoseStamped) -> None:
     """
