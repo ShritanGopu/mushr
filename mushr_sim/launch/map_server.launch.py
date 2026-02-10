@@ -20,7 +20,17 @@ def generate_launch_description():
                 'yaml_filename': os.path.join(
                     get_package_share_directory('mushr_sim'),
                     'config',
-                    LaunchConfiguration('yaml_filename')
+                    LaunchConfiguration('map')
                 )
             }]),
+
+        Node(
+            package='nav2_lifecycle_manager',
+            executable='lifecycle_manager',
+            name='lifecycle_manager',
+            output='screen',
+            parameters=[{
+                'autostart': True,
+                'node_names': ['map_server']
+            }])
     ])

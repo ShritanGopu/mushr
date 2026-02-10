@@ -60,7 +60,7 @@ def generate_launch_description():
         xacro_file = PathJoinSubstitution([
             FindPackageShare('mushr_description'),
             'robots',
-            'racecar-mit.urdf.xacro'
+            'mushr_nano.urdf.xacro'
         ])
 
         rsp_node = Node(
@@ -75,24 +75,6 @@ def generate_launch_description():
                 "tf_prefix": car if tf_prefix_on else "",
             }],
         )
-
-        # fake_loc_node = Node(
-        #     package="fake_localization_ros2",
-        #     executable="fake_localization",
-        #     name="fake_localization",
-        #     output="screen",
-        #     remappings=[
-        #         ("base_pose_ground_truth", f"/mushr_sim/{car}/odom"),
-        #     ],
-        #     parameters=[{
-        #         "base_frame_id": (
-        #             f"{car}/base_footprint" if tf_prefix_on else "base_footprint"
-        #         ),
-        #         "odom_frame_id": (
-        #             f"{car}/odom" if tf_prefix_on else "odom"
-        #         ),
-        #     }],
-        # )
 
         fake_loc_container = ComposableNodeContainer(
             name="fake_localization_container",

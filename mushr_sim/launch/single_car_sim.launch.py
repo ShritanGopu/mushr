@@ -105,7 +105,7 @@ def generate_launch_description():
 
     return LaunchDescription(
         [
-            # DeclareLaunchArgument("car_name", default_value="car"),
+            DeclareLaunchArgument("car_name", default_value="car"),
             DeclareLaunchArgument("use_tf_prefix", default_value="true"),
             DeclareLaunchArgument("fake_localization", default_value="true"),
             DeclareLaunchArgument("teleop", default_value="true"),

@@ -6,8 +6,17 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /RobotModel1
+        - /RobotModel1/Status1
+        - /RobotModel1/Mass Properties1
+        - /RobotModel1/Description Topic1
+        - /TF1/Frames1
+        - /Odometry1/Topic1
+        - /Map1/Topic1
+        - /Map1/Update Topic1
+        - /LaserScan1
       Splitter Ratio: 0.5
-    Tree Height: 328
+    Tree Height: 1270
   - Class: rviz_common/Selection
     Name: Selection
   - Class: rviz_common/Tool Properties
@@ -25,7 +34,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: LaserScan
 Visualization Manager:
   Class: ""
   Displays:
@@ -47,8 +56,93 @@ Visualization Manager:
       Plane Cell Count: 10
       Reference Frame: <Fixed Frame>
       Value: true
-    - Class: rviz_default_plugins/TF
+    - Alpha: 1
+      Class: rviz_default_plugins/RobotModel
+      Collision Enabled: false
+      Description File: /home/sg/ros2_ws/src/mushr/mushr_description/robots/mushr_nano.urdf.xacro
+      Description Source: Topic
+      Description Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /car/car/robot_description
       Enabled: true
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+        back_left/wheel_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        back_right/wheel_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        base_footprint:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        camera_bottom_screw_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        camera_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        front_left/wheel_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        front_left/wheel_steer_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        front_right/wheel_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        front_right/wheel_steer_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        insets_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        laser_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        platform_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+      Mass Properties:
+        Inertia: false
+        Mass: false
+      Name: RobotModel
+      TF Prefix: car
+      Update Interval: 0
+      Value: true
+      Visual Enabled: true
+    - Class: rviz_default_plugins/TF
+      Enabled: false
       Filter (blacklist): ""
       Filter (whitelist): ""
       Frame Timeout: 15
@@ -62,30 +156,7 @@ Visualization Manager:
       Tree:
         {}
       Update Interval: 0
-      Value: true
-    - Alpha: 0.699999988079071
-      Binary representation: false
-      Binary threshold: 100
-      Class: rviz_default_plugins/Map
-      Color Scheme: map
-      Draw Behind: false
-      Enabled: true
-      Name: Map
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        Filter size: 10
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: ""
-      Update Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: ""
-      Use Timestamp: false
-      Value: true
+      Value: false
     - Angle Tolerance: 0.10000000149011612
       Class: rviz_default_plugins/Odometry
       Covariance:
@@ -123,22 +194,50 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: ""
+        Value: /car/car/odom
       Value: true
     - Alpha: 1
-      Class: rviz_default_plugins/PointStamped
-      Color: 204; 41; 204
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz_default_plugins/Pose
+      Color: 255; 25; 0
       Enabled: true
-      History Length: 1
-      Name: PointStamped
-      Radius: 0.20000000298023224
+      Head Length: 0.30000001192092896
+      Head Radius: 0.10000000149011612
+      Name: Pose
+      Shaft Length: 1
+      Shaft Radius: 0.05000000074505806
+      Shape: Arrow
       Topic:
         Depth: 5
         Durability Policy: Volatile
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: ""
+        Value: /mushr_sim/reposition
+      Value: true
+    - Alpha: 0.699999988079071
+      Binary representation: false
+      Binary threshold: 100
+      Class: rviz_default_plugins/Map
+      Color Scheme: map
+      Draw Behind: false
+      Enabled: true
+      Name: Map
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /map
+      Update Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /map_updates
+      Use Timestamp: false
       Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
@@ -150,7 +249,7 @@ Visualization Manager:
       Channel Name: intensity
       Class: rviz_default_plugins/LaserScan
       Color: 255; 255; 255
-      Color Transformer: ""
+      Color Transformer: Intensity
       Decay Time: 0
       Enabled: true
       Invert Rainbow: false
@@ -159,7 +258,7 @@ Visualization Manager:
       Min Color: 0; 0; 0
       Min Intensity: 0
       Name: LaserScan
-      Position Transformer: ""
+      Position Transformer: XYZ
       Selectable: true
       Size (Pixels): 3
       Size (m): 0.009999999776482582
@@ -170,36 +269,10 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: ""
+        Value: /car
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
-    - Alpha: 1
-      Class: rviz_default_plugins/RobotModel
-      Collision Enabled: false
-      Description File: ""
-      Description Source: Topic
-      Description Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: ""
-      Enabled: true
-      Links:
-        All Links Enabled: true
-        Expand Joint Details: false
-        Expand Link Details: false
-        Expand Tree: false
-        Link Tree Style: ""
-      Mass Properties:
-        Inertia: false
-        Mass: false
-      Name: RobotModel
-      TF Prefix: ""
-      Update Interval: 0
-      Value: true
-      Visual Enabled: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -245,8 +318,8 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Class: rviz_default_plugins/Orbit
-      Distance: 10
+      Class: rviz_default_plugins/XYOrbit
+      Distance: 2.4147286415100098
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -256,23 +329,23 @@ Visualization Manager:
         X: 0
         Y: 0
         Z: 0
-      Focal Shape Fixed Size: true
+      Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.055398307740688324
-      Target Frame: <Fixed Frame>
-      Value: Orbit (rviz)
-      Yaw: 0.84539794921875
+      Pitch: -0.009601274505257607
+      Target Frame: car/base_link
+      Value: XYOrbit (rviz_default_plugins)
+      Yaw: 3.4654057025909424
     Saved: ~
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 846
+  Height: 1788
   Hide Left Dock: false
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd0000000400000000000001f400000244fc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b000000b200fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c0061007900730100000070000002440000018600fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000015d00000244fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a005600690065007700730100000070000002440000013800fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004b00000005efc0100000002fb0000000800540069006d00650100000000000004b00000047a00fffffffb0000000800540069006d00650100000000000004500000000000000000000001470000024400000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd000000040000000000000343000005f2fc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b000000b200fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c0061007900730100000070000005f20000018600fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c000002610000000100000350000005f2fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a005600690065007700730100000070000005f20000013800fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e1000001970000000300000d600000005efc0100000002fb0000000800540069006d0065010000000000000d600000047a00fffffffb0000000800540069006d00650100000000000004500000000000000000000006b5000005f200000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -281,6 +354,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: false
-  Width: 1200
-  X: 605
-  Y: 145
+  Width: 3424
+  X: 0
+  Y: 64
