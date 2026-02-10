@@ -110,12 +110,12 @@ class KeyboardTeleop(Node):
         with self.state_lock:
             self.get_logger().debug("Publishing teleop command. Past state_lock")
 
-            if not self.control:
-                return
-
             cmd_up, cmd_left, cmd_down, cmd_right = self.state
-            self.get_logger().info(f"cmds: {self.state}")
             ack = AckermannDriveStamped()
+
+            ack.drive.speed = 0.0
+            ack.drive.steering_angle = 0.0
+
             if cmd_up:
                 ack.drive.speed = self.max_velocity
             elif cmd_down:
@@ -126,6 +126,7 @@ class KeyboardTeleop(Node):
             elif cmd_right:
                 ack.drive.steering_angle = -self.max_steering_angle
 
+            # self.get_logger().info(f"cmds: {self.state}")
             if self.state_pub is not None:
                 self.state_pub.publish(ack)
 

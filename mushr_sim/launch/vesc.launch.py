@@ -65,6 +65,6 @@ def generate_launch_description():
             output="screen",
             parameters=[{
                 "car_name": car_name,
-            }],
+            }, vesc_config],
         ),
     ])

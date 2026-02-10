@@ -52,7 +52,7 @@ class FakeURG():
 
         # Start at 0,0,0
         self.transform = Transform()
-        self.transform.rotation.w = 1
+        self.transform.rotation.w = 0.0
         self.ranges_lock = Lock()
         self.ranges = np.zeros(len(self.angles) * 1, dtype=np.float32)
 

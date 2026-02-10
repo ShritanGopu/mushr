@@ -8,17 +8,10 @@ import numpy as np
 import rclpy
 from rclpy.node import Node
 import tf2_ros
-from geometry_msgs.msg import PoseStamped, TransformStamped
-# from mushr_base import utils
 from mushr_sim.fake_urg import FakeURG
 from mushr_base.motion_model import KinematicCarMotionModel
 from mushr_sim_interfaces.srv import CarPose
-import mushr_sim.utils as utils
-from nav_msgs.msg import Odometry
 from nav_msgs.srv import GetMap
-from sensor_msgs.msg import JointState
-from std_msgs.msg import Float64
-from vesc_msgs.msg import VescStateStamped
 from mushr_sim.simulated_car import SimulatedCar
 
 class MushrSim(Node):
@@ -250,7 +243,7 @@ class MushrSim(Node):
         sensor_params["tf_prefix"] = car_tf_prefix
         try:
             transform = self.tf_buffer.lookup_transform(
-                        car_tf_prefix + "laser_model",
+                        car_tf_prefix + "laser_link",
                         car_tf_prefix + "base_link",
                         rclpy.time.Time(),
                         timeout=rclpy.duration.Duration(seconds=10)
@@ -262,7 +255,6 @@ class MushrSim(Node):
             self.get_logger().warn("Failed to spawn new car named '{}' because no TF information was found. Exception: {} - {}".format(car_name, type(e).__name__, str(e)))
             return False
 
-        self.get_logger().info("initiazliing fake urg")
         sensor = FakeURG(self, self.raw_map_msg, topic_namespace=car_name, x_offset=transform.translation.x,
                          **sensor_params)
         
@@ -298,7 +290,7 @@ class MushrSim(Node):
         # vehicles.
         for car in self._cars:
             car.simulate(dt, now)
-
+            # self.get_logger().info(f"car {car.transform}")
             # Publish the tf from odom to base_footprint
             self.br.sendTransform(car.transform)
 

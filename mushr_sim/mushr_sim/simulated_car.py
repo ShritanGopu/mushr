@@ -187,7 +187,7 @@ class SimulatedCar():
                                                                              np.array([[v, delta]]), dt)
 
             state_changes = state_changes.squeeze()
-            # self.get_logger().warn(f"Requested reposition to map coords: {state_changes}")
+            # self.node.get_logger().warn(f"Requested reposition to map coords: {state_changes}")
 
             joint_changes = joint_changes.squeeze()
             in_bounds = True
@@ -202,17 +202,18 @@ class SimulatedCar():
                         new_pose[0] * np.sin(self.map_to_odom_rot)
                         + new_pose[1] * np.cos(self.map_to_odom_rot)
                 )
-                new_map_pose[2] = self.map_to_odom_rot + new_pose[2]
+                new_map_pose[2] = self.map_to_odom_rot + new_pose[2]    
 
                 # Get the new pose w.r.t the map in pixels
                 if self.permissible_region is not None:
+                    # self.node.get_logger().info(f"map_info.origin: {self.map_info.origin}")
                     new_map_pose = utils.world_to_map(new_map_pose, self.map_info)
 
                     in_bounds = check_position_in_bounds(new_map_pose[0], new_map_pose[1], self.permissible_region)
                     
             if in_bounds:
                 # Update pose of base_footprint w.r.t odom
-                self.node.get_logger().info(f"Updating pose to: {new_pose}")
+                # self.node.get_logger().info(f"Updating pose to: {new_pose}")
                 self.odom_to_base_trans[0] = new_pose[0]
                 self.odom_to_base_trans[1] = new_pose[1]
                 self.odom_to_base_rot = new_pose[2]
@@ -242,6 +243,7 @@ class SimulatedCar():
             # rospy.logerr_throttle(1,t)
             # rospy.logerr_throttle(1, new_pose)
             self.fake_laser.transform = t.transform
+            # self.node.get_logger().info(f"Publishing transform: {t}")
             self.transform = t
             self.publish_updated_transforms(self.transform, state_changes)
 
@@ -278,7 +280,7 @@ class SimulatedCar():
         odom_msg.child_frame_id = self.tf_prefix + "base_footprint"
         odom_msg.twist.twist.linear.x = changes[0]
         odom_msg.twist.twist.linear.y = changes[1]
-        odom_msg.twist.twist.angular.z = changes[2]
+        odom_msg.twist.twist.angular.z = 0.0 # changes[2]
 
         self.odom_pub.publish(odom_msg)
 

@@ -115,7 +115,7 @@ def generate_launch_description():
             DeclareLaunchArgument("foxglove_teleop", default_value="0"),
             DeclareLaunchArgument("keyboard_teleop", default_value="1"),
             DeclareLaunchArgument(
-                "racecar_version", default_value="racecar-mit"
+                "racecar_version", default_value="mushr_nano"
             ),
             DeclareLaunchArgument("racecar_color", default_value=""),
 

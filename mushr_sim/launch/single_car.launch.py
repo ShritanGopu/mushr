@@ -116,6 +116,7 @@ def generate_launch_description():
                             f"{car}/odom" if tf_prefix_on else "odom"
                         ),
                         "use_sim_time": True,
+                        # "delta_yaw": 0.0,
                     }],
                 )
             ],
