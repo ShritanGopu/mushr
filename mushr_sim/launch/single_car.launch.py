@@ -156,8 +156,8 @@ def generate_launch_description():
                 )
             ),
             launch_arguments={
-                "mux_output_topic": f"output",
-                "car_name": f"/{car}",
+                "mux_output_topic": f"/{car}/output",
+                "car_name": f"{car}",
             }.items(),
         )
 

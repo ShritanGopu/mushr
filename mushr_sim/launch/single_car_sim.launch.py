@@ -9,7 +9,7 @@ from rclpy.parameter import Parameter
 
 
 def generate_launch_description():
-    # car_name = LaunchConfiguration("car_name")
+    car_name = LaunchConfiguration("car_name")
     use_tf_prefix = LaunchConfiguration("use_tf_prefix")
     fake_localization = LaunchConfiguration("fake_localization")
     teleop = LaunchConfiguration("teleop")
@@ -30,6 +30,7 @@ def generate_launch_description():
     sensors_yaml = PathJoinSubstitution(
         [mushr_share, "config", racecar_version, "sensors.yaml"]
     )
+    # sensors_yaml = "/home/dbzfan2012/ros2_ws/src/mushr/mushr_sim/config/racecar-mit/sensors.yaml"
 
     single_car_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -38,6 +39,7 @@ def generate_launch_description():
             )
         ),
         launch_arguments={
+            "car_name": car_name,
             "racecar_version": racecar_version,
             "fake_localization": fake_localization,
             "racecar_color": racecar_color,
@@ -50,7 +52,7 @@ def generate_launch_description():
 
     group_car = GroupAction(
         [
-            PushRosNamespace("car"),
+            #PushRosNamespace("car"),
             single_car_launch,
         ]
     )
@@ -62,15 +64,13 @@ def generate_launch_description():
         output="screen",
         remappings=[
             ("/reposition", "/mushr_sim/reposition"),
-            ("/car/vesc/sensors/core", "/car/car/sensors/core"),
-        ("/car/vesc/sensors/servo_position_command", "/car/car/sensors/servo_position_command"),
         ],
     )
 
     mushr_sim_node = Node(
         package="mushr_sim",
         executable="sim_node",
-        name="mushr_sim_main",
+        name="mushr_sim",
         output="screen",
         parameters=[
             mushr_sim_yaml,
@@ -82,11 +82,9 @@ def generate_launch_description():
                 "car_names": ["car"],
                 # Equivalent to ROS1:
                 # <param name="$(arg car_name)/initial_x" ... />
-                "initial_conditions": {
-                    "x": ParameterValue(initial_x, value_type=float),
-                    "y": ParameterValue(initial_y, value_type=float),
-                    "theta": ParameterValue(initial_theta, value_type=float),
-                },
+                "car.initial_x": ParameterValue(initial_x, value_type=float),
+                "car.initial_y": ParameterValue(initial_y, value_type=float),
+                "car.initial_theta": ParameterValue(initial_theta, value_type=float),
             },
         ],
         remappings=[
@@ -98,15 +96,13 @@ def generate_launch_description():
                 "/car_pose",
                 [TextSubstitution(text="/"), "car", TextSubstitution(text="/car_pose")],
             ),
-            ("/car/vesc/sensors/core", "/car/car/sensors/core"),
-            ("/car/vesc/sensors/servo_position_command", "/car/car/sensors/servo_position_command"),
         ],
     )
 
     return LaunchDescription(
         [
             DeclareLaunchArgument("car_name", default_value="car"),
-            DeclareLaunchArgument("use_tf_prefix", default_value="true"),
+            DeclareLaunchArgument("use_tf_prefix", default_value="false"),
             DeclareLaunchArgument("fake_localization", default_value="true"),
             DeclareLaunchArgument("teleop", default_value="true"),
             DeclareLaunchArgument("initial_x", default_value="0"),

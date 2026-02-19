@@ -80,13 +80,13 @@ class SimulatedCar():
         # Publishes joint values
         self.cur_joints_pub = self.node.create_publisher(JointState, f"car/{car_name}/joint_states", 1) 
         # Subscribes to the initial pose of the car
-        self.init_pose_sub = self.node.create_subscription(PoseStamped, "/reposition", self.init_pose_cb, 1)
+        self.init_pose_sub = self.node.create_subscription(PoseStamped, "/mushr_sim/reposition", self.init_pose_cb, 1)
 
         # Subscribes to info about the bldc (particularly the speed in rpm)
-        self.speed_sub = self.node.create_subscription(VescStateStamped, f"/{car_name}/car/sensors/core", self.speed_cb, 1)
-        
+        self.speed_sub = self.node.create_subscription(VescStateStamped, f"/{car_name}/vesc/sensors/core", self.speed_cb, 1)
+
         # Subscribes to the position of the servo arm
-        self.servo_sub = self.node.create_subscription(Float64, f"/{car_name}/car/sensors/servo_position_command", self.servo_cb, 1)
+        self.servo_sub = self.node.create_subscription(Float64, f"/{car_name}/vesc/sensors/servo_position_command", self.servo_cb, 1)
         self.motion_model = motion_model
 
     def init_pose_cb(self, msg):
@@ -182,7 +182,7 @@ class SimulatedCar():
             )
             # self.get_logger().warn(f"Requested reposition to map coords: {v, delta, dt}")
 
-            dt = dt / 100000000.0
+            dt = dt / 1000000000.0
             state_changes, joint_changes = self.motion_model.apply_motion_model(new_pose[np.newaxis, ...],
                                                                              np.array([[v, delta]]), dt)
 
@@ -209,6 +209,9 @@ class SimulatedCar():
                     # self.node.get_logger().info(f"map_info.origin: {self.map_info.origin}")
                     new_map_pose = utils.world_to_map(new_map_pose, self.map_info)
 
+                    # print(f"x_pos is <{new_map_pose[0]}>, y_pos is <{new_map_pose[1]}>, is in bounds: <{check_position_in_bounds(new_map_pose[0], new_map_pose[1], self.permissible_region)}>")#\npermissible region is: <{self.permissible_region}>")
+                    # print(np.count_nonzero(self.permissible_region), self.permissible_region.size)
+                    # print(np.unique(self.permissible_region, return_counts=True))
                     in_bounds = check_position_in_bounds(new_map_pose[0], new_map_pose[1], self.permissible_region)
                     
             if in_bounds:
@@ -237,7 +240,7 @@ class SimulatedCar():
             self.cur_joints_pub.publish(self.joint_msg)
 
             t = utils.make_transform_msg(self.odom_to_base_trans, self.odom_to_base_rot,
-                                         self.tf_prefix + "base_footprint", "car/odom", now)
+                                         self.tf_prefix + "base_footprint", self.tf_prefix + "odom", now)
 
             # Tell the laser where we are
             # rospy.logerr_throttle(1,t)

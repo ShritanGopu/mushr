@@ -255,7 +255,7 @@ class MushrSim(Node):
             self.get_logger().warn("Failed to spawn new car named '{}' because no TF information was found. Exception: {} - {}".format(car_name, type(e).__name__, str(e)))
             return False
 
-        sensor = FakeURG(self, self.raw_map_msg, topic_namespace=car_name, x_offset=transform.translation.x,
+        sensor = FakeURG(self, self.raw_map_msg, topic_namespace=car_name + "/scan", x_offset=transform.translation.x,
                          **sensor_params)
         
         new_car = SimulatedCar(self, car_name, x, y, theta, speed_to_erpm_gain=self.speed_to_erpm_gain,

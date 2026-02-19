@@ -37,6 +37,7 @@ def generate_launch_description():
             package="vesc_ackermann",
             executable="ackermann_to_vesc_node",   # confirm actual ROS2 executable name
             name="ackermann_to_vesc",
+            namespace="vesc",
             output="screen",
             parameters=[vesc_config],
             remappings=[
@@ -55,6 +56,7 @@ def generate_launch_description():
             package="mushr_sim",
             executable="fake_vesc_driver",   # confirm actual ROS2 executable name
             name="vesc_driver",
+            namespace="vesc",
             output="screen",
         ),
 
@@ -62,6 +64,7 @@ def generate_launch_description():
             package="mushr_sim",
             executable="throttle_interpolator",   # confirm actual ROS2 executable name
             name="throttle_interpolator",
+            namespace="vesc",
             output="screen",
             parameters=[{
                 "car_name": car_name,
