@@ -62,7 +62,7 @@ def world_to_map(pose, map_info):
     # equivalent to map_to_grid(world_to_map(poses))
     # operates in place
     scale = map_info.resolution
-    angle = -quaternion_to_angle(map_info.origin.orientation)
+    angle = quaternion_to_angle(map_info.origin.orientation)
 
     map_pose = np.array(pose)
 
@@ -80,7 +80,7 @@ def world_to_map(pose, map_info):
     tmp = map_pose[0]
     map_pose[0] = c * map_pose[0] - s * map_pose[1]
     map_pose[1] = s * tmp + c * map_pose[1]
-    map_pose[2] += angle
+    map_pose[2] -= angle
 
     return map_pose
 

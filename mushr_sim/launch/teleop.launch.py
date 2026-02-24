@@ -142,8 +142,9 @@ def generate_launch_description():
     ld.add_action(DeclareLaunchArgument("keyboard_teleop", default_value="1"))
 
     ld.add_action(DeclareLaunchArgument("map", default_value=PathJoinSubstitution(
-        [FindPackageShare("mushr_sim"), "maps", "sandbox.yaml"]
+        [FindPackageShare("mushr_sim"), "maps", "gates.yaml"]
     )))
+
     ld.add_action(DeclareLaunchArgument("car_name", default_value="car"))
     ld.add_action(DeclareLaunchArgument("use_tf_prefix", default_value="true"))
     ld.add_action(DeclareLaunchArgument("fake_localization", default_value="true"))
@@ -155,7 +156,6 @@ def generate_launch_description():
     ld.add_action(foxglove_group)
     ld.add_action(map_server_group)
     ld.add_action(nav_msg_converter_group)
-
     ld.add_action(remap_initialpose)
     ld.add_action(single_car_sim_include)
 

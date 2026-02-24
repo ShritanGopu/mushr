@@ -280,7 +280,7 @@ class SimulatedCar():
         odom_msg.child_frame_id = self.tf_prefix + "base_footprint"
         odom_msg.twist.twist.linear.x = changes[0]
         odom_msg.twist.twist.linear.y = changes[1]
-        odom_msg.twist.twist.angular.z = 0.0 # changes[2]
+        odom_msg.twist.twist.angular.z = changes[2]
 
         self.odom_pub.publish(odom_msg)
 

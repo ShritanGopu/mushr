@@ -88,7 +88,7 @@ def generate_launch_description():
                     plugin="fake_localization_ros2::FakeOdomNode",
                     name="fake_localization",
                     remappings=[
-                        ("base_pose_ground_truth", f"/mushr_sim/{car}/odom"),
+                        ("base_pose_ground_truth", f"/{car}/odom"),
                     ],
                     parameters=[{
                         "base_frame_id": (

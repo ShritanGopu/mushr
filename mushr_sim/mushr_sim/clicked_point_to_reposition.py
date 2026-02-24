@@ -14,7 +14,7 @@ def main(args=None):
     def point_clicked_cb(msg):
         as_pose = PoseStamped(header=msg.header)
         as_pose.pose.position = msg.point
-        as_pose.pose.orientation.w = 1
+        as_pose.pose.orientation.w = 1.0
         pub.publish(as_pose)
 
     node = Node('clicked_point_to_reposition')

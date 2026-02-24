@@ -61,7 +61,6 @@ def generate_launch_description():
         name="clicked_point_to_reposition",
         output="screen",
         remappings=[
-            ("/reposition", "/mushr_sim/reposition"),
             ("/car/vesc/sensors/core", "/car/car/sensors/core"),
         ("/car/vesc/sensors/servo_position_command", "/car/car/sensors/servo_position_command"),
         ],
