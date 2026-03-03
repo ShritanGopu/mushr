@@ -2,12 +2,21 @@ from setuptools import find_packages, setup
 from glob import glob
 import os
 
-def recursive_files(root_dir: str):
-    matches = []
-    for path, _, files in os.walk(root_dir):
-        for f in files:
-            matches.append(os.path.join(path, f))
-    return matches
+# def recursive_files(root_dir: str):
+#     matches = []
+#     for path, _, files in os.walk(root_dir):
+#         for f in files:
+#             matches.append(os.path.join(path, f))
+#     return matches
+
+def config_data_files(share_name, config_dir):
+    """Install config preserving subdirectory structure (avoids filename collisions)."""
+    result = []
+    for path, _, files in os.walk(config_dir):
+        if files:
+            dest = os.path.join('share', share_name, path)
+            result.append((dest, [os.path.join(path, f) for f in files]))
+    return result
 
 setup(
     name="mushr_sim",
@@ -27,9 +36,12 @@ setup(
             glob('launch/*.yml')
         ),
 
-        (os.path.join('share', "mushr_sim", 'config'),
-            recursive_files('config')
-        ),
+        # (os.path.join('share', "mushr_sim", 'config'),
+        #     recursive_files('config')
+        # ),
+        *config_data_files("mushr_sim", "launch"),
+        *config_data_files("mushr_sim", "maps"),
+        *config_data_files("mushr_sim", "config"),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
