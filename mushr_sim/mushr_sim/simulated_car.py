@@ -74,11 +74,11 @@ class SimulatedCar():
 
         self.fake_laser = sensor_model
         # Publishes joint values
-        self.state_pub = self.node.create_publisher(PoseStamped, f"car/{car_name}/car_pose", 1)
-        self.odom_pub = self.node.create_publisher(Odometry, f"car/{car_name}/odom", 5)
+        self.state_pub = self.node.create_publisher(PoseStamped, f"{car_name}/car_pose", 1)
+        self.odom_pub = self.node.create_publisher(Odometry, f"{car_name}/odom", 5)
 
         # Publishes joint values
-        self.cur_joints_pub = self.node.create_publisher(JointState, f"car/{car_name}/joint_states", 1) 
+        self.cur_joints_pub = self.node.create_publisher(JointState, f"{car_name}/joint_states", 1) 
         # Subscribes to the initial pose of the car
         self.init_pose_sub = self.node.create_subscription(PoseStamped, "/mushr_sim/reposition", self.init_pose_cb, 1)
 

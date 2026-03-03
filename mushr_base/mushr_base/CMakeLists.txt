@@ -5,12 +5,6 @@ project(mushr_base)
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
 
-# Typical for Python nodes using messages
-find_package(rclpy REQUIRED)
-
-# Custom message package dependency (replace with your actual package)
-find_package(vesc REQUIRED)
-
 # Install the Python package (if you have a setup.py / src/mushr_base/ tree)
 ament_python_install_package(${PROJECT_NAME})
 
