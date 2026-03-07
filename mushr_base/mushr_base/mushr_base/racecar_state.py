@@ -55,7 +55,7 @@ class RacecarState(Node):
         self.CAR_WHEEL_RADIUS = 0.0976 / 2.0
 
         # Rate at which to publish joints and tf
-        self.UPDATE_RATE = float(self.get_parameter("~update_rate", 20.0))
+        self.UPDATE_RATE = float(self.get_parameter("~update_rate", 100.0))
 
         # Speed noise mean is computed as the most recent speed multiplied by this value
         self.SPEED_OFFSET = float(self.get_parameter("~speed_offset", 0.00))

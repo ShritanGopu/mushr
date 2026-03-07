@@ -26,4 +26,9 @@
   <exec_depend>tf2_ros</exec_depend>
   <exec_depend>vesc_main</exec_depend>
   <depend>vesc_msgs</depend>
+  
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+
 </package>
