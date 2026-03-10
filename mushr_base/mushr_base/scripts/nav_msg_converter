@@ -11,9 +11,10 @@ from mushr_base.nav_msg_converter import NavMsgConverter
 class ConverterThread(Thread):
     def __init__(self):
         super(ConverterThread, self).__init__()
+        self.converter = NavMsgConverter()
 
     def run(self):
-        self.converter = NavMsgConverter()
+        rclpy.spin(self.converter)
 
     def shutdown(self):
         self.converter.root.quit()
@@ -25,8 +26,6 @@ def main(args=None):
 
     converter_thread = ConverterThread()
     converter_thread.start()
-    # Spin the main thread
-    rclpy.spin()
     # We either got SIGINT from control-C or ROS is otherwise coming down.
     converter_thread.converter.shutdown()
 

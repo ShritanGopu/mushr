@@ -17,10 +17,13 @@ class NavMsgConverter(Node):
         name (string) rosnode name
     """
 
-    super().__init__('nav_msg_converter')
-
     self.type = None
-
+    self.declare_parameter("pose_topic", "/car/car_pose")
+    self.declare_parameter("type_topic", "/foxglove/click_type")
+    self.declare_parameter("goal_topic", "/goal_pose")
+    self.declare_parameter("estimate_topic", "/pose_estimate")
+    self.declare_parameter("start_topic", "/mushr_sim/reposition")
+    self.declare_parameter("car_name", "car")
     # Create the subscribers
     self.pose_sub = self.create_subscription(
       self.get_parameter("~pose_topic"), PoseStamped, self.publish_pose, queue_size=100
