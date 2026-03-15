@@ -9,7 +9,7 @@ from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from launch.substitutions import PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
-from launch.event_handlers import OnProcessStart
+from launch.event_handlers import OnProcessExit, OnProcessStart
 
 
 def generate_launch_description():
@@ -21,7 +21,7 @@ def generate_launch_description():
         parameters=[{
             'yaml_filename': LaunchConfiguration('map')
     }])
-    
+
     map_lifecycle_manager_node = Node(
         package='nav2_lifecycle_manager',
         executable='lifecycle_manager',
@@ -31,6 +31,13 @@ def generate_launch_description():
             'autostart': True,
             'node_names': ['map_server']
     }])
+
+    wait_for_map_server = Node(
+        package='mushr_sim',
+        executable='wait_for_map_server',
+        name='wait_for_map_server',
+        output='screen',
+    )
 
     return LaunchDescription([
         DeclareLaunchArgument(
@@ -43,9 +50,15 @@ def generate_launch_description():
         ),
         map_server_node,
         RegisterEventHandler(
-            OnProcessStart(                                                                                                                                
+            OnProcessStart(
                 target_action=map_server_node,
-                on_start=[map_lifecycle_manager_node],
-            )                                                                                                                                              
-        )
+                on_start=[wait_for_map_server],
+            )
+        ),
+        RegisterEventHandler(
+            OnProcessExit(
+                target_action=wait_for_map_server,
+                on_exit=[map_lifecycle_manager_node],
+            )
+        ),
     ])

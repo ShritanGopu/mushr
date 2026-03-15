@@ -58,6 +58,7 @@ setup(
             'sim_node = mushr_sim.mushr_sim:main',
             'clicked_point_to_reposition = mushr_sim.clicked_point_to_reposition:main',
             'throttle_interpolator = mushr_sim.throttle_interpolator:main',
+            'wait_for_map_server = mushr_sim.wait_for_lifecycle_node:main',
         ],
     },
 )
