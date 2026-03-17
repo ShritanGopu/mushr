@@ -4,6 +4,7 @@ from __future__ import absolute_import, division, print_function
 
 from threading import Lock
 
+import rclpy
 import sys
 sys.path.append("../")
 import numpy as np
@@ -360,3 +361,13 @@ class RacecarState(Node):
 
         self.odom_pub.publish(odom_msg)
         self.cur_odom_to_base_lock.release()
+
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = RacecarState()
+    try:
+        rclpy.spin(node)
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()

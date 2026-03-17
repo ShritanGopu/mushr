@@ -38,7 +38,7 @@ def generate_launch_description():
     ld.add_action(DeclareLaunchArgument("estimate_topic", default_value="/pose_estimate"))
     ld.add_action(DeclareLaunchArgument("goal_topic", default_value="/move_base_simple/goal"))
     ld.add_action(DeclareLaunchArgument("car_name", default_value="car"))
-    ld.add_action(DeclareLaunchArgument("pose_topic", default_value="/car/pose_stamped"))
+    ld.add_action(DeclareLaunchArgument("pose_topic", default_value="/foxglove/pose_stamped"))
     ld.add_action(DeclareLaunchArgument("type_topic", default_value="/foxglove/click_type"))
 
     ld.add_action(nav_msg_converter_node)

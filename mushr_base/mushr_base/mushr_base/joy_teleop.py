@@ -334,3 +334,17 @@ class JoyTeleop(Node):
                 return ros2topic.api(rclpy.resolve_name(action_name) + "/goal")[0][:-4]
         except TypeError:
             raise JoyTeleopException("could not find action {}".format(action_name))
+
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = None
+    try:
+        node = JoyTeleop()
+        rclpy.spin(node)
+    except JoyTeleopException:
+        pass
+    finally:
+        if node is not None:
+            node.destroy_node()
+        rclpy.shutdown()
