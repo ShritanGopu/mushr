@@ -90,7 +90,7 @@ def _make_launch(context, *args, **kwargs):
     )
 
     vesc_include = _include_launch(
-        "vesc_main",
+        "mushr_sim",
         [
             "launch/vesc.launch.py",
             "launch/vesc.launch.xml",
@@ -165,7 +165,7 @@ def generate_launch_description():
             DeclareLaunchArgument("car_name", default_value="car"),
             DeclareLaunchArgument("racecar_version", default_value="racecar-uw-nano"),
             DeclareLaunchArgument("use_mocap", default_value="false"),
-            DeclareLaunchArgument("foxglove_teleop", default_value="1"),
+            DeclareLaunchArgument("foxglove_teleop", default_value="0"),
             OpaqueFunction(function=_make_launch),
         ]
     )

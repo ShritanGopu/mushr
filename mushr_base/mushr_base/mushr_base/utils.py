@@ -3,7 +3,6 @@
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
-import rclpy
 import tf_transformations
 from geometry_msgs.msg import Quaternion, TransformStamped
 

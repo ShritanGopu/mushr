@@ -10,7 +10,7 @@ sys.path.append("../")
 import numpy as np
 from rclpy.node import Node
 import tf2_ros
-import utils
+import mushr_base.utils as utils
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float64
@@ -29,78 +29,98 @@ class RacecarState(Node):
     def __init__(self):
         super().__init__('racecar_state')
 
+        self.declare_parameter("vesc.speed_to_erpm_offset", 0.0)
+        self.declare_parameter("vesc.speed_to_erpm_gain", 4614.0)
+        self.declare_parameter("vesc.steering_angle_to_servo_offset", 0.5304)
+        self.declare_parameter("vesc.steering_angle_to_servo_gain", -1.2135)
+        self.declare_parameter("vesc.chassis_length", 0.33)
+        self.declare_parameter("vesc.wheelbase", 0.25)
+        self.declare_parameter("update_rate", 100.0)
+        self.declare_parameter("speed_offset", 0.00)
+        self.declare_parameter("speed_noise", 0.0001)
+        self.declare_parameter("steering_angle_offset", 0.00)
+        self.declare_parameter("steering_angle_noise", 0.000001)
+        self.declare_parameter("forward_offset", 0.0)
+        self.declare_parameter("forward_fix_noise", 0.0000001)
+        self.declare_parameter("forward_scale_noise", 0.001)
+        self.declare_parameter("side_offset", 0.0)
+        self.declare_parameter("side_fix_noise", 0.000001)
+        self.declare_parameter("side_scale_noise", 0.001)
+        self.declare_parameter("theta_offset", 0.0)
+        self.declare_parameter("theta_fix_noise", 0.000001)
+        self.declare_parameter("tf_prefix", "")
 
         # speed (rpm) = self.SPEED_TO_ERPM_OFFSET + self.SPEED_TO_ERPM_GAIN * speed (m/s)
         self.SPEED_TO_ERPM_OFFSET = float(
-            self.get_parameter("vesc/speed_to_erpm_offset", 0.0)
+            self.get_parameter("vesc.speed_to_erpm_offset").value
         )
         self.SPEED_TO_ERPM_GAIN = float(
-            self.get_parameter("vesc/speed_to_erpm_gain", 4614.0)
+            self.get_parameter("vesc.speed_to_erpm_gain").value
         )
 
         # servo angle = self.STEERING_TO_SERVO_OFFSET + self.STEERING_TO_SERVO_GAIN * steering_angle (rad)
         self.STEERING_TO_SERVO_OFFSET = float(
-            self.get_parameter("vesc/steering_angle_to_servo_offset", 0.5304)
+            self.get_parameter("vesc.steering_angle_to_servo_offset").value
         )
         self.STEERING_TO_SERVO_GAIN = float(
-            self.get_parameter("vesc/steering_angle_to_servo_gain", -1.2135)
+            self.get_parameter("vesc.steering_angle_to_servo_gain").value
         )
 
         # Length of the car
-        self.CAR_LENGTH = float(self.get_parameter("vesc/chassis_length", 0.33))
+        self.CAR_LENGTH = float(self.get_parameter("vesc.chassis_length").value)
 
         # Width of the car
-        self.CAR_WIDTH = float(self.get_parameter("vesc/wheelbase", 0.25))
+        self.CAR_WIDTH = float(self.get_parameter("vesc.wheelbase").value)
 
         # The radius of the car wheel in meters
         self.CAR_WHEEL_RADIUS = 0.0976 / 2.0
 
         # Rate at which to publish joints and tf
-        self.UPDATE_RATE = float(self.get_parameter("~update_rate", 100.0))
+        self.UPDATE_RATE = float(self.get_parameter("update_rate").value)
 
         # Speed noise mean is computed as the most recent speed multiplied by this value
-        self.SPEED_OFFSET = float(self.get_parameter("~speed_offset", 0.00))
+        self.SPEED_OFFSET = float(self.get_parameter("speed_offset").value)
 
         # Speed noise std dev
-        self.SPEED_NOISE = float(self.get_parameter("~speed_noise", 0.0001))
+        self.SPEED_NOISE = float(self.get_parameter("speed_noise").value)
 
         # Steering angle noise mean is cimputed as the most recent steering angle multiplied by this value
         self.STEERING_ANGLE_OFFSET = float(
-            self.get_parameter("~steering_angle_offset", 0.00)
+            self.get_parameter("steering_angle_offset").value
         )
 
         # Steering angle noise std dev
         self.STEERING_ANGLE_NOISE = float(
-            self.get_parameter("~steering_angle_noise", 0.000001)
+            self.get_parameter("steering_angle_noise").value
         )
 
         # Forward direction noise mean
-        self.FORWARD_OFFSET = float(self.get_parameter("~forward_offset", 0.0))
+        self.FORWARD_OFFSET = float(self.get_parameter("forward_offset").value)
 
         # Forward direction noise std dev
-        self.FORWARD_FIX_NOISE = float(self.get_parameter("~forward_fix_noise", 0.0000001))
+        self.FORWARD_FIX_NOISE = float(self.get_parameter("forward_fix_noise").value)
 
         # Additional zero-mean gaussian noise added to forward direction
         # std dev is most recent velocity times this value
-        self.FORWARD_SCALE_NOISE = float(self.get_parameter("~forward_scale_noise", 0.001))
+        self.FORWARD_SCALE_NOISE = float(self.get_parameter("forward_scale_noise").value)
 
         # Side direction noise mean
-        self.SIDE_OFFSET = float(self.get_parameter("~side_offset", 0.0))
+        self.SIDE_OFFSET = float(self.get_parameter("side_offset").value)
 
         # Side direction noise std dev
-        self.SIDE_FIX_NOISE = float(self.get_parameter("~side_fix_noise", 0.000001))
+        self.SIDE_FIX_NOISE = float(self.get_parameter("side_fix_noise").value)
 
         # Additional zero-mean gaussian noise added to side direction
         # std dev is most recent velocity times this value
-        self.SIDE_SCALE_NOISE = float(self.get_parameter("~side_scale_noise", 0.001))
+        self.SIDE_SCALE_NOISE = float(self.get_parameter("side_scale_noise").value)
 
         # Theta noise mean
-        self.THETA_OFFSET = float(self.get_parameter("~theta_offset", 0.0))
+        self.THETA_OFFSET = float(self.get_parameter("theta_offset").value)
 
         # Theta noise std dev
-        self.THETA_FIX_NOISE = float(self.get_parameter("~theta_fix_noise", 0.000001))
+        self.THETA_FIX_NOISE = float(self.get_parameter("theta_fix_noise").value)
         # Append this prefix to any broadcasted TFs
-        self.TF_PREFIX = str(self.get_parameter("~tf_prefix", "").rstrip("/"))
+        self.TF_PREFIX = str(self.get_parameter("tf_prefix").value).rstrip("/")
         if len(self.TF_PREFIX) > 0:
             self.TF_PREFIX = self.TF_PREFIX + "/"
 
@@ -115,7 +135,7 @@ class RacecarState(Node):
         self.last_steering_angle = 0.0
         self.last_steering_angle_lock = Lock()
 
-        self.odom_pub = self.create_publisher("odom", Odometry, queue_size=1)
+        self.odom_pub = self.create_publisher(Odometry, "odom", 1)
 
         # The most recent transform from odom to base_footprint
         self.cur_odom_to_base_trans = np.array([0, 0], dtype=float)
@@ -137,24 +157,24 @@ class RacecarState(Node):
         self.joint_msg.effort = []
 
         # Publishes joint messages
-        self.br = tf2_ros.TransformBroadcaster()
+        self.br = tf2_ros.TransformBroadcaster(self)
 
         self.tf_buffer = tf2_ros.Buffer()
         # Duration param controls how often to publish default map to odom tf
         # if no other nodes are publishing it
-        self.transformer = tf2_ros.TransformListener(self.tf_buffer)
+        self.transformer = tf2_ros.TransformListener(self.tf_buffer, self)
         
         # Publishes joint values
-        self.cur_joints_pub = self.create_publisher("joint_states", JointState, queue_size=1)
+        self.cur_joints_pub = self.create_publisher(JointState, "joint_states",1)
 
         # Subscribes to info about the bldc (particularly the speed in rpm)
         self.speed_sub = self.create_subscription(
-            "vesc/sensors/core", VescStateStamped, self.speed_cb, queue_size=1
+            VescStateStamped, "vesc/sensors/core", self.speed_cb, 1
         )
 
         # Subscribes to the position of the servo arm
         self.servo_sub = self.create_subscription(
-            "vesc/sensors/servo_position_command", Float64, self.servo_cb, queue_size=1
+            Float64, "vesc/sensors/servo_position_command", self.servo_cb, 1
         )
 
         # Timer to updates joints and tf
@@ -207,13 +227,13 @@ class RacecarState(Node):
       event: Information about when this callback occurred
     """
 
-    def timer_cb(self, event):
+    def timer_cb(self):
         now = self.get_clock().now()
 
         # Get the time since the last update
         if self.last_stamp is None:
             self.last_stamp = now
-        dt = (now - self.last_stamp).to_sec()
+        dt = (now - self.last_stamp).nanoseconds / 1e9
 
         # Add noise to the speed
         self.last_speed_lock.acquire()
@@ -337,27 +357,29 @@ class RacecarState(Node):
             self.joint_msg.position[i] = self.clip_angle(self.joint_msg.position[i])
 
         t = utils.make_transform_msg(self.cur_odom_to_base_trans, self.cur_odom_to_base_rot,
-                                     self.TF_PREFIX + "base_footprint", self.TF_PREFIX + "odom")
+                                     self.TF_PREFIX + "base_footprint", self.TF_PREFIX + "odom", now)
 
         # Publish the tf from odom to base_footprint
         self.br.sendTransform(t)
 
         # Publish the joint states
-        self.joint_msg.header.stamp = now
+        self.joint_msg.header.stamp = now.to_msg()
         self.cur_joints_pub.publish(self.joint_msg)
 
         self.last_stamp = now
 
         odom_msg = Odometry()
-        odom_msg.header.stamp = self.last_stamp
+        odom_msg.header.stamp = self.last_stamp.to_msg()
         odom_msg.header.frame_id = self.TF_PREFIX + "odom"
-        odom_msg.pose.pose.position = t.transform.translation
+        odom_msg.pose.pose.position.x = t.transform.translation.x
+        odom_msg.pose.pose.position.y = t.transform.translation.y
+        odom_msg.pose.pose.position.z = t.transform.translation.z
         odom_msg.pose.pose.orientation = t.transform.rotation
 
         odom_msg.child_frame_id = self.TF_PREFIX + "base_link"
-        odom_msg.twist.twist.linear.x = dx
-        odom_msg.twist.twist.linear.y = dy
-        odom_msg.twist.twist.angular.z = dtheta
+        odom_msg.twist.twist.linear.x = float(dx)
+        odom_msg.twist.twist.linear.y = float(dy)
+        odom_msg.twist.twist.angular.z = float(dtheta)
 
         self.odom_pub.publish(odom_msg)
         self.cur_odom_to_base_lock.release()

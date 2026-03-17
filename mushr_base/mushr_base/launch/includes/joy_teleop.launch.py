@@ -9,6 +9,7 @@ from launch_ros.substitutions import FindPackageShare
 
 def _make_nodes(context, *args, **kwargs):
     car_name = LaunchConfiguration("car_name").perform(context)
+    joy_config = LaunchConfiguration("joy_config").perform(context)
     joy_teleop_config = LaunchConfiguration("joy_teleop_config").perform(context)
 
     joy_node = Node(
@@ -16,7 +17,7 @@ def _make_nodes(context, *args, **kwargs):
         executable="joy_node",
         name="joy_node",
         output="screen",
-        parameters=[joy_teleop_config],
+        parameters=[joy_config],
     )
 
     joy_teleop_node = Node(
@@ -38,6 +39,12 @@ def _make_nodes(context, *args, **kwargs):
 def generate_launch_description():
     return LaunchDescription(
         [
+            DeclareLaunchArgument(
+                "joy_config",
+                default_value=PathJoinSubstitution(
+                    [FindPackageShare("mushr_base"), "config", "joy_node.yaml"]
+                ),
+            ),
             DeclareLaunchArgument(
                 "joy_teleop_config",
                 default_value=PathJoinSubstitution(
