@@ -89,6 +89,26 @@ class SimulatedCar():
         self.servo_sub = self.node.create_subscription(Float64, f"/{car_name}/vesc/sensors/servo_position_command", self.servo_cb, 1)
         self.motion_model = motion_model
 
+    def get_simulation_inputs(self):
+        with self.last_speed_lock:
+            speed = self.last_speed
+
+        with self.last_steering_angle_lock:
+            steering_angle = self.last_steering_angle
+
+        with self.odom_to_base_lock:
+            state = np.array(
+                [
+                    self.odom_to_base_trans[0],
+                    self.odom_to_base_trans[1],
+                    self.odom_to_base_rot,
+                ],
+                dtype=float,
+            )
+
+        control = np.array([speed, steering_angle], dtype=float)
+        return state, control
+
     def init_pose_cb(self, msg):
         """
          init_pose_cb: Callback to capture the initial pose of the car
@@ -161,35 +181,8 @@ class SimulatedCar():
             self.odom_to_base_trans = np.array([x, y], dtype=float)
             self.odom_to_base_rot = theta
 
-    def simulate(self, dt, now):
-
-        # Add noise to the speed
-        with self.last_speed_lock:
-            v = self.last_speed
-        # Add noise to the steering angle
-        with self.last_steering_angle_lock:
-            delta = self.last_steering_angle
-
+    def apply_simulation_result(self, new_pose, state_changes, joint_changes, now):
         with self.odom_to_base_lock:
-            # Apply kinematic car model to the previous pose
-            new_pose = np.array(
-                [
-                    self.odom_to_base_trans[0],
-                    self.odom_to_base_trans[1],
-                    self.odom_to_base_rot,
-                ],
-                dtype=float,
-            )
-            # self.get_logger().warn(f"Requested reposition to map coords: {v, delta, dt}")
-
-            dt = dt / 1000000000.0
-            state_changes, joint_changes = self.motion_model.apply_motion_model(new_pose[np.newaxis, ...],
-                                                                             np.array([[v, delta]]), dt)
-
-            state_changes = state_changes.squeeze()
-            # self.node.get_logger().warn(f"Requested reposition to map coords: {state_changes}")
-
-            joint_changes = joint_changes.squeeze()
             in_bounds = True
             if self.permissible_region is not None:
                 # Compute the new pose w.r.t the map in meters

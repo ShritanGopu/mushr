@@ -1,0 +1,10 @@
+/**:
+  ros__parameters:
+    traj_chosen_topic: "~/traj_chosen"
+    debug/ip_topic: "car_pose"
+    debug/update_trajectory_rate: 2
+    debug/flag/viz_traj_chosen_trace: false
+    debug/flag/rollouts_on_init_pose: true
+    debug/flag/viz_rollouts: true
+    debug/viz_rollouts/n: -1
+    debug/viz_rollouts/print_stats: true

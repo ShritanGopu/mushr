@@ -40,6 +40,7 @@ class KeyboardTeleop(Node):
         self.keycodes = keycodes
         self.state = [False] * 4  # matching keys
         self.state_lock = Lock()
+        self.was_controlling = False
 
 
         self.state_pub = self.create_publisher(
@@ -111,6 +112,11 @@ class KeyboardTeleop(Node):
             self.get_logger().debug("Publishing teleop command. Past state_lock")
 
             cmd_up, cmd_left, cmd_down, cmd_right = self.state
+            controlling = any(self.state)
+
+            if not controlling and not self.was_controlling:
+                return
+
             ack = AckermannDriveStamped()
 
             ack.drive.speed = 0.0
@@ -129,6 +135,7 @@ class KeyboardTeleop(Node):
             # self.get_logger().info(f"cmds: {self.state}")
             if self.state_pub is not None:
                 self.state_pub.publish(ack)
+            self.was_controlling = controlling
 
 def main(args=None):
     rclpy.init(args=args)

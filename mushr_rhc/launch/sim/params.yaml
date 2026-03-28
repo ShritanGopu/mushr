@@ -1,0 +1,4 @@
+/**:
+  ros__parameters:
+    traj_chosen_topic: "~/traj_chosen"
+    profile: false

@@ -283,16 +283,30 @@ class MushrSim(Node):
 
         # self.get_logger().info("Simulating with dt =" + str(dt))
 
-        # NOTE(nickswalker5-6-21): There's more stuff that could optionally
-        # happen here. All the state updates could be calculated at once
-        # because the motion model is vectorized (ROS operations would
-        # need to be looped over after). Collision checking between
-        # vehicles.
-        for car in self._cars:
-            car.simulate(dt, now)
+        if self._cars:
+            dt_seconds = dt / 1000000000.0
+            states = np.empty((len(self._cars), 3), dtype=float)
+            controls = np.empty((len(self._cars), 2), dtype=float)
+
+            for index, car in enumerate(self._cars):
+                state, control = car.get_simulation_inputs()
+                states[index] = state
+                controls[index] = control
+
+            state_changes, joint_changes = self.default_motion_model.apply_motion_model(
+                states, controls, dt_seconds
+            )
+
+            for index, car in enumerate(self._cars):
+                car.apply_simulation_result(
+                    states[index],
+                    state_changes[index],
+                    joint_changes[index],
+                    now,
+                )
             # self.get_logger().info(f"car {car.transform}")
             # Publish the tf from odom to base_footprint
-            self.br.sendTransform(car.transform)
+                self.br.sendTransform(car.transform)
 
         self.last_stamp = now
 

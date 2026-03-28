@@ -136,7 +136,7 @@ def generate_launch_description():
     ld = LaunchDescription()
 
     # Declare args
-    ld.add_action(DeclareLaunchArgument("map_server", default_value="1"))
+    ld.add_action(DeclareLaunchArgument("map_server", default_value="0"))
     ld.add_action(DeclareLaunchArgument("nav_msg_converter", default_value="1"))
     ld.add_action(DeclareLaunchArgument("foxglove_teleop", default_value="0"))
     ld.add_action(DeclareLaunchArgument("keyboard_teleop", default_value="1"))

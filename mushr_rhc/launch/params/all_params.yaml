@@ -1,0 +1,3 @@
+/**:
+  ros__parameters:
+    static_map: "/c2g/static_map"
