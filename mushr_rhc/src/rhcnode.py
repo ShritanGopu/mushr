@@ -123,6 +123,7 @@ class RHCNode(rhcbase.RHCBase):
         self.publish_traj(next_traj, rollout)
         if self.rhctrl.at_goal(self.inferred_pose()):
             self.expr_at_goal.publish(Empty())
+            self.publish_stop()
             self.goal_active = False
 
     def srv_reset_hard(self, request, response):
@@ -130,6 +131,7 @@ class RHCNode(rhcbase.RHCBase):
         with self.reset_lock:
             self.rhctrl = self.load_controller()
             self.goal_active = False
+            self.publish_stop()
         self.get_logger().info("End hard reset")
         return response
 
@@ -139,6 +141,7 @@ class RHCNode(rhcbase.RHCBase):
             if self.rhctrl is not None:
                 self.rhctrl.reset()
             self.goal_active = False
+            self.publish_stop()
         self.get_logger().info("End soft reset")
         return response
 
@@ -180,6 +183,13 @@ class RHCNode(rhcbase.RHCBase):
         ctrlmsg.header.stamp = self.get_clock().now().to_msg()
         ctrlmsg.drive.speed = float(ctrl[0])
         ctrlmsg.drive.steering_angle = float(ctrl[1])
+        self.rp_ctrls.publish(ctrlmsg)
+
+    def publish_stop(self):
+        ctrlmsg = AckermannDriveStamped()
+        ctrlmsg.header.stamp = self.get_clock().now().to_msg()
+        ctrlmsg.drive.speed = 0.0
+        ctrlmsg.drive.steering_angle = 0.0
         self.rp_ctrls.publish(ctrlmsg)
 
     def set_inferred_pose(self, ip):
