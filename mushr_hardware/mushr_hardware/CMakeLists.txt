@@ -144,10 +144,12 @@ include_directories(
 # )
 
 ## Install other files such as config, launch, maps, etc.
-# install(FILES
-#   launch/example.launch.py
-#   DESTINATION share/${PROJECT_NAME}
-# )
+install(
+  DIRECTORY
+    config
+    launch
+  DESTINATION share/${PROJECT_NAME}
+)
 
 #############
 ## Testing ##

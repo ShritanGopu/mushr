@@ -17,8 +17,6 @@ project(push_button_utils)
 ##
 ## rospy is not used in ROS 2 (Python nodes use rclpy instead).
 find_package(ament_cmake REQUIRED)
-# find_package(rclcpp REQUIRED)
-# find_package(std_msgs REQUIRED)
 
 ## System dependencies are found using standard CMake
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -71,12 +69,6 @@ find_package(ament_cmake REQUIRED)
 ##   INCLUDE_DIRS – public headers
 ##   LIBRARIES – libraries this package builds
 ##   DEPENDS – non-ROS system libraries
-ament_package(
-  # INCLUDE_DIRS include
-  # LIBRARIES push_button_utils
-  # DEPENDS Boost
-)
-
 ###########
 ## Build ##
 ###########
@@ -106,23 +98,22 @@ include_directories(
 #   DESTINATION lib/${PROJECT_NAME}
 # )
 
-## Python scripts (if any)
-# install(PROGRAMS
-#   scripts/my_python_script.py
-#   DESTINATION lib/${PROJECT_NAME}
-# )
+install(
+  PROGRAMS
+    src/push_button.py
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 ## Install header files
 # install(DIRECTORY include/${PROJECT_NAME}/
 #   DESTINATION include/${PROJECT_NAME}
 # )
 
-## Install configuration or launch files
-# install(FILES
-#   launch/example.launch.py
-#   config/example.yaml
-#   DESTINATION share/${PROJECT_NAME}
-# )
+install(
+  DIRECTORY
+    launch
+  DESTINATION share/${PROJECT_NAME}
+)
 
 #############
 ## Testing ##

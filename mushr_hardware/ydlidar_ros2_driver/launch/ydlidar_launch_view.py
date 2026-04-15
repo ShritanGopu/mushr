@@ -36,19 +36,21 @@ def generate_launch_description():
                                                share_dir, 'params', 'ydlidar.yaml'),
                                            description='FPath to the ROS2 parameters file to use.')
 
-    driver_node = LifecycleNode(package='ydlidar_ros2_driver',
-                                node_executable='ydlidar_ros2_driver_node',
-                                node_name='ydlidar_ros2_driver_node',
-                                output='screen',
-                                emulate_tty=True,
-                                parameters=[parameter_file],
-                                node_namespace='/',
-                                )
-    tf2_node = Node(package='tf2_ros',
-                    node_executable='static_transform_publisher',
-                    node_name='static_tf_pub_laser',
-                    arguments=['0', '0', '0.02','0', '0', '0', '1','base_link','laser_frame'],
-                    )
+    driver_node = LifecycleNode(
+        package='ydlidar_ros2_driver',
+        executable='ydlidar_ros2_driver_node',
+        name='ydlidar_ros2_driver_node',
+        namespace='',
+        output='screen',
+        emulate_tty=True,
+        parameters=[parameter_file],
+    )
+    tf2_node = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='static_tf_pub_laser',
+        arguments=['0', '0', '0.02', '0', '0', '0', '1', 'car/base_link', 'car/laser_link'],
+    )
     rviz2_node = Node(package='rviz2',
                     node_executable='rviz2',
                     node_name='rviz2',

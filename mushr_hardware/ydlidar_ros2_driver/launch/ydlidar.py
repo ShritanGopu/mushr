@@ -20,8 +20,8 @@ def launch(launch_descriptor, argv):
                 package_name=package, executable_name='static_transform_publisher'),
             '0', '0', '0.02',
             '0', '0', '0', '1',
-            'base_link',
-            'laser_frame'
+            'car/base_link',
+            'car/laser_link'
         ],
         name='static_tf_pub_laser',
         exit_handler=restart_exit_handler,

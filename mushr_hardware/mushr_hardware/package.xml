@@ -27,4 +27,7 @@
   <exec_depend>ydlidar_ros2_driver</exec_depend>
   <exec_depend>push_button_utils</exec_depend>
 
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
 </package>
