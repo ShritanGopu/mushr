@@ -52,13 +52,14 @@ def generate_launch_description():
             ],
         ),
 
-        Node(
-            package="mushr_sim",
-            executable="fake_vesc_driver",   # confirm actual ROS2 executable name
+         Node(
+            package="vesc_driver",
+            executable="vesc_driver_node",   # confirm actual ROS2 executable name
             name="vesc_driver",
             namespace="vesc",
             output="screen",
-        ),
+            parameters=[vesc_config],
+       ),
 
         Node(
             package="mushr_sim",
