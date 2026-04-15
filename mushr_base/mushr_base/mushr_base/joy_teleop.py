@@ -1,9 +1,11 @@
 import importlib
 from threading import Thread
+import yaml
+import numpy as np
 import rclpy
 import rclpy.action
 from rclpy.node import Node
-import sensor_msgs
+import sensor_msgs.msg
 from rosidl_runtime_py import set_message_fields
 import ros2service.api
 
@@ -16,26 +18,27 @@ class JoyTeleop(Node):
     def __init__(self):
         super().__init__('joy_teleop')
 
-        self.CAR_NAME = self.get_parameter("~car_name", "/car")
+        self.declare_parameter("car_name", "/car")
+        self.declare_parameter("teleop_config", "")
+
+        self.CAR_NAME = self.get_parameter("car_name").value
         if not self.CAR_NAME.endswith("/"):
             self.CAR_NAME += "/"
 
-        if not self.has_parameter("teleop"):
-            self.get_logger().fatal("no configuration was found, taking node down")
-            raise JoyTeleopException("no config")
-
-        self.publishers = {}
-        self.al_clients = {}
-        self.srv_clients = {}
-        self.service_types = {}
-        self.message_types = {}
-        self.command_list = {}
+        self.topic_publishers = {}
+        self.al_clients = dict()
+        self.srv_clients = dict()
+        self.service_types = dict()
+        self.message_types = dict()
+        self.command_list = dict()
         self.offline_actions = []
         self.offline_services = []
 
         self.old_buttons = []
 
-        teleop_cfg = self.get_parameter("teleop")
+        teleop_cfg = self._load_teleop_config(
+            self.get_parameter("teleop_config").value
+        )
 
         for i in teleop_cfg:
             if i in self.command_list:
@@ -54,10 +57,30 @@ class JoyTeleop(Node):
 
 
         # Don't subscribe until everything has been initialized.
-        self.create_subscription("joy", sensor_msgs.msg.Joy, self.joy_callback)
+        self.create_subscription(sensor_msgs.msg.Joy, "joy", self.joy_callback, 10)
 
         # Run a low-freq action updater
         self.create_timer(2.0, self.update_actions)
+
+    def _load_teleop_config(self, config_path):
+        if not config_path:
+            self.get_logger().fatal("no teleop configuration file was provided")
+            raise JoyTeleopException("no config path")
+
+        with open(config_path, "r", encoding="utf-8") as handle:
+            config = yaml.safe_load(handle) or {}
+
+        # Support both flat format (teleop: ...) and ROS2 param format
+        # (joy_teleop: ros__parameters: teleop: ...)
+        teleop_cfg = config.get("teleop")
+        if teleop_cfg is None:
+            ros_params = config.get("joy_teleop", {}).get("ros__parameters", {})
+            teleop_cfg = ros_params.get("teleop")
+        if teleop_cfg is None:
+            self.get_logger().fatal("no teleop configuration was found")
+            raise JoyTeleopException("no config")
+
+        return teleop_cfg
 
     def joy_callback(self, data):
         try:
@@ -242,11 +265,17 @@ class JoyTeleop(Node):
             topic_name = command["topic_name"]
         else:
             topic_name = self.CAR_NAME + command["topic_name"]
+            self.get_logger().info(
+            "command {} is publishing to {}, which is outside of the car namespace".format(
+                name, topic_name                )
+            )
+
+
 
         try:
             topic_type = self.get_message_type(command["message_type"])
-            self.publishers[topic_name] = self.create_publisher(
-                topic_name, topic_type, queue_size=1
+            self.topic_publishers[topic_name] = self.create_publisher(
+                topic_type, topic_name, 1
             )
         except JoyTeleopException as e:
             self.get_logger().log(
@@ -281,7 +310,7 @@ class JoyTeleop(Node):
             topic_name = self.CAR_NAME + cmd["topic_name"]
         else:
             topic_name = cmd["topic_name"]
-        self.publishers[topic_name].publish(msg)
+        self.topic_publishers[topic_name].publish(msg)
 
 
     def set_member(self, msg, member, value):
@@ -334,3 +363,17 @@ class JoyTeleop(Node):
                 return ros2topic.api(rclpy.resolve_name(action_name) + "/goal")[0][:-4]
         except TypeError:
             raise JoyTeleopException("could not find action {}".format(action_name))
+
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = None
+    try:
+        node = JoyTeleop()
+        rclpy.spin(node)
+    except JoyTeleopException:
+        pass
+    finally:
+        if node is not None:
+            node.destroy_node()
+        rclpy.shutdown()
