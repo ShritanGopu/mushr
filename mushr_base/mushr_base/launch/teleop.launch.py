@@ -129,6 +129,7 @@ def _make_launch(context, *args, **kwargs):
         "mushr_base",
         ["launch/includes/racecar_state.launch.py"],
         {
+            "racecar_version": racecar_version,
             "tf_prefix": car_name,
             "use_mocap": use_mocap,
         },

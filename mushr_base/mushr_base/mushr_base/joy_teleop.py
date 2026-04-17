@@ -265,6 +265,12 @@ class JoyTeleop(Node):
             topic_name = command["topic_name"]
         else:
             topic_name = self.CAR_NAME + command["topic_name"]
+            self.get_logger().info(
+            "command {} is publishing to {}, which is outside of the car namespace".format(
+                name, topic_name                )
+            )
+
+
 
         try:
             topic_type = self.get_message_type(command["message_type"])
