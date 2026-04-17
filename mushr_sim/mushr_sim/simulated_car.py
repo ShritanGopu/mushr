@@ -68,7 +68,7 @@ class SimulatedCar():
             "front_left_wheel_steer",
             "front_right_wheel_steer",
         ]
-        self.joint_msg.position = [0, 0, 0, 0, 0, 0]
+        self.joint_msg.position = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         self.joint_msg.velocity = []
         self.joint_msg.effort = []
 

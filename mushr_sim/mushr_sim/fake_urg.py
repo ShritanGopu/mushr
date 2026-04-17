@@ -108,7 +108,7 @@ class FakeURG():
         ls.angle_max = self.angle_max
         ls.range_min = self.min_range_meters
         ls.range_max = self.max_range_meters
-        ls.intensities = np.zeros((0))
+        ls.intensities = []
 
         laser_angle = utils.quaternion_to_angle(self.transform.rotation)
         laser_pose_x = self.transform.translation.x + self.x_offset * np.cos(laser_angle)
@@ -120,5 +120,5 @@ class FakeURG():
         with self.ranges_lock:
             self.range_method.calc_range_repeat_angles(range_pose, self.angles, self.ranges)
             self.noise_laser_scan(self.ranges)
-            ls.ranges = self.ranges
+            ls.ranges = self.ranges.astype(float).tolist()
             self.laser_pub.publish(ls)

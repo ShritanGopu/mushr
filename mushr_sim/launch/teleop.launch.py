@@ -93,7 +93,7 @@ def generate_launch_description():
             )
         ),
         launch_arguments={
-            "racecar_version": "racecar-uw-nano",
+            "racecar_version": "mushr_nano",
             "racecar_color": "",
             "foxglove_teleop": foxglove_teleop,
             "keyboard_teleop": keyboard_teleop,

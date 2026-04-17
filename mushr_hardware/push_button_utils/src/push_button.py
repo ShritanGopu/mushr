@@ -9,11 +9,17 @@ import rclpy
 class PushButton(Node):
 
     def __init__(self):
-        self.gpio_pin = self.get_parameter("push_button/gpio_pin", 31)
-        self.pub_topic = self.get_parameter("push_button/pub_topic", "push_button_state")
-        self.pub_rate = self.get_parameter("push_button/pub_rate", 100)
+        super().__init__("push_button")
 
-        self.state_pub = self.create_publisher(Bool, self.pub_topic, queue_size=1)
+        self.declare_parameter("push_button/gpio_pin", 31)
+        self.declare_parameter("push_button/pub_topic", "push_button_state")
+        self.declare_parameter("push_button/pub_rate", 100)
+
+        self.gpio_pin = self.get_parameter("push_button/gpio_pin", 31).value
+        self.pub_topic = self.get_parameter("push_button/pub_topic", "push_button_state").value
+        self.pub_rate = self.get_parameter("push_button/pub_rate", 100).value
+
+        self.state_pub = self.create_publisher(Bool, self.pub_topic, 1)
 
     def start(self):
         GPIO.setmode(GPIO.BOARD)
