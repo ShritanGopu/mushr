@@ -1,6 +1,7 @@
 # vesc_sim.launch.py
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
+from launch.conditions import IfCondition, UnlessCondition
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
@@ -9,6 +10,7 @@ from launch_ros.substitutions import FindPackageShare
 def generate_launch_description():
     mux_output_topic = LaunchConfiguration("mux_output_topic")
     car_name = LaunchConfiguration("car_name")
+    fake_vesc = LaunchConfiguration("fake_vesc")
 
     # ROS1: default="$(find mushr_sim)/config/vesc.yaml"
     vesc_config = LaunchConfiguration("vesc_config")
@@ -29,6 +31,11 @@ def generate_launch_description():
                 "config",
                 "vesc.yaml",
             ]),
+        ),
+        DeclareLaunchArgument(
+            "fake_vesc",
+            default_value="true",
+            description="Use mushr_sim fake_vesc_driver (sim). Set false to use real vesc_driver hardware.",
         ),
 
         # ROS1: <rosparam file="$(arg vesc_config)" command="load" />
@@ -52,14 +59,24 @@ def generate_launch_description():
             ],
         ),
 
-         Node(
+        Node(
+            package="mushr_sim",
+            executable="fake_vesc_driver",
+            name="vesc_driver",
+            namespace="vesc",
+            output="screen",
+            condition=IfCondition(fake_vesc),
+        ),
+
+        Node(
             package="vesc_driver",
-            executable="vesc_driver_node",   # confirm actual ROS2 executable name
+            executable="vesc_driver_node",
             name="vesc_driver",
             namespace="vesc",
             output="screen",
             parameters=[vesc_config],
-       ),
+            condition=UnlessCondition(fake_vesc),
+        ),
 
         Node(
             package="mushr_sim",
