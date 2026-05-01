@@ -18,7 +18,7 @@
 	<xacro:mushr_ydlidar />
 
 	<xacro:sensor_d435 parent="base_link" >
-  		<origin xyz="0.10075 0.0 0.099" rpy="0 0 0" />
+  		<origin xyz="0.10075 0.0 0.099" rpy="0 0 3.14159" />
 	</xacro:sensor_d435>
 
 

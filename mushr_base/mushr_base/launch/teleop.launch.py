@@ -131,6 +131,7 @@ def _make_launch(context, *args, **kwargs):
         {
             "tf_prefix": car_name,
             "use_mocap": use_mocap,
+            "racecar_version": racecar_version,
         },
     )
 
