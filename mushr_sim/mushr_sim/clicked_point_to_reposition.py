@@ -22,7 +22,14 @@ def main(args=None):
     sub = node.create_subscription(PointStamped, "/clicked_point", point_clicked_cb, 1)
     pub = node.create_publisher(PoseStamped, "reposition", 1)
 
-    rclpy.spin(node)
+    try:
+        rclpy.spin(node)
+    except (KeyboardInterrupt, rclpy.executors.ExternalShutdownException):
+        pass
+    finally:
+        node.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 if __name__ == "__main__":
     main()

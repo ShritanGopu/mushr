@@ -119,7 +119,14 @@ class ThrottleInterpolator(Node):
 def main(args=None):
     rclpy.init(args=args)
     p = ThrottleInterpolator()
-    rclpy.spin(p)
+    try:
+        rclpy.spin(p)
+    except (KeyboardInterrupt, rclpy.executors.ExternalShutdownException):
+        pass
+    finally:
+        p.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 if __name__ == '__main__':
     main()
