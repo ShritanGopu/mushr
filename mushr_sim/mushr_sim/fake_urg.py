@@ -25,7 +25,7 @@ class FakeURG():
         self.node = node
         required = {"update_rate", "theta_discretization", "min_range_meters", "max_range_meters", "angle_step",
                     "angle_min", "angle_max", "z_short", "z_max", "z_blackout_max", "z_rand", "z_hit", "z_sigma",
-                    "tf_prefix",
+                    "tf_prefix", "laser_yaw_offset",
                     }
         if not set(kwargs).issubset(required):
             raise ValueError("Invalid keyword argument provided")
@@ -110,9 +110,10 @@ class FakeURG():
         ls.range_max = self.max_range_meters
         ls.intensities = []
 
-        laser_angle = utils.quaternion_to_angle(self.transform.rotation)
-        laser_pose_x = self.transform.translation.x + self.x_offset * np.cos(laser_angle)
-        laser_pose_y = self.transform.translation.y + self.x_offset * np.sin(laser_angle)
+        car_yaw = utils.quaternion_to_angle(self.transform.rotation)
+        laser_pose_x = self.transform.translation.x + self.x_offset * np.cos(car_yaw)
+        laser_pose_y = self.transform.translation.y + self.x_offset * np.sin(car_yaw)
+        laser_angle = car_yaw + self.laser_yaw_offset
 
         range_pose = np.array(
             (laser_pose_x, laser_pose_y, laser_angle), dtype=np.float32

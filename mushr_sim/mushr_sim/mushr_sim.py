@@ -79,6 +79,7 @@ class MushrSim(Node):
         self.declare_parameter("fake_urg.angle_step", 0.006396)
         self.declare_parameter("fake_urg.min_range_meters", 0.02)
         self.declare_parameter("fake_urg.max_range_meters", 0.16)
+        self.declare_parameter("fake_urg.laser_yaw_offset", np.pi)
 
         # Extract motion model parameters
         self.motion_params = {
@@ -117,6 +118,7 @@ class MushrSim(Node):
             "angle_step": float(self.get_parameter("fake_urg.angle_step").value),
             "min_range_meters": float(self.get_parameter("fake_urg.min_range_meters").value),
             "max_range_meters": float(self.get_parameter("fake_urg.max_range_meters").value),
+            "laser_yaw_offset": float(self.get_parameter("fake_urg.laser_yaw_offset").value),
         }
 
         # The map and map params
