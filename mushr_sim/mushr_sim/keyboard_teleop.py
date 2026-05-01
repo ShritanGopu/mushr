@@ -43,7 +43,7 @@ class KeyboardTeleop(Node):
 
 
         self.state_pub = self.create_publisher(
-            AckermannDriveStamped, "input/teleop", 1
+            AckermannDriveStamped, "mux/input/teleop", 1
         )
         self.root = self.setup_tk()
         self.timer = self.create_timer(0.1, self.publish_cb)

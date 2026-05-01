@@ -156,7 +156,7 @@ def generate_launch_description():
                 )
             ),
             launch_arguments={
-                "mux_output_topic": f"/{car}/output",
+                "mux_output_topic": f"/{car}/mux/output",
                 "car_name": f"{car}",
             }.items(),
         )
@@ -182,7 +182,7 @@ def generate_launch_description():
                         [keyboard_launch],
                         condition=IfCondition(teleop),
                     ),
-                    mux_include,
+                    GroupAction([PushRosNamespace("mux"), mux_include]),
                     vesc_include,
                 ]
             )

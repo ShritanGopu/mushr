@@ -2,6 +2,7 @@
 
 from __future__ import absolute_import, division, print_function
 
+import time
 from threading import Lock
 
 import numpy as np
@@ -145,10 +146,15 @@ class MushrSim(Node):
                 return permissible_region, map_msg.info, map_msg
             else:
                 self.get_logger().error('Service call failed %r' % (future.exception(),))
-                return None, None
+                return None, None, None
                         
-        # Get the map
-        self.permissible_region, self.map_info, self.raw_map_msg = get_map()
+        # Get the map - retry until map_server is active and returns valid data
+        while True:
+            self.permissible_region, self.map_info, self.raw_map_msg = get_map()
+            if self.raw_map_msg is not None and self.raw_map_msg.info.resolution > 0:
+                break
+            self.get_logger().info("Map not ready (resolution=0), retrying...")
+            time.sleep(1.0)
 
         # Publishes joint messages
         self.br = tf2_ros.TransformBroadcaster(self)
@@ -321,6 +327,11 @@ def main(args=None):
     rclpy.init(args=args)
     node = MushrSim()
     node.get_logger().info("Starting MushrSim node.")
-    rclpy.spin(node)
-    node.destroy_node()
-    rclpy.shutdown()
+    try:
+        rclpy.spin(node)
+    except (KeyboardInterrupt, rclpy.executors.ExternalShutdownException):
+        pass
+    finally:
+        node.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
